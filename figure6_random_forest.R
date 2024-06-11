@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 ##################################################
 #R program for creating Figure 6
 ##################################################
@@ -25,29 +26,29 @@ tax <- tax %>% rename("taxonomy"="# taxonomy")
 names(tax) = gsub("_taxonomic_profile", "", names(tax))
 tax_t<-tax[grepl("t__", tax$taxonomy), ] #only use the ones with t__ level
 levels <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species", "Species2")
-tax_species<-tax_t %>% separate(taxonomy, sep = "\\|", into = levels, remove = FALSE) %>% 
+tax_species<-tax_t %>% separate(taxonomy, sep = "\\|", into = levels, remove = FALSE) %>%
   select(-c("taxonomy","Domain", "Phylum", "Class", "Order", "Family", "Genus")) %>%
   mutate(Species=gsub("SGB\\d+\\s?", "", Species)) %>%
-  unite("speciesname",Species:Species2,remove=TRUE) %>% 
+  unite("speciesname",Species:Species2,remove=TRUE) %>%
   mutate(speciesname = gsub("s__","",speciesname)) %>% mutate(speciesname = gsub("t__","",speciesname)) %>%
   mutate(speciesname = gsub("__","_",speciesname)) %>%
-  column_to_rownames("speciesname") %>% 
-  t() 
+  column_to_rownames("speciesname") %>%
+  t()
 tax_species<-tax_species/100
-tax_species_for_merge<-tax_species%>% 
+tax_species_for_merge<-tax_species%>%
   as.data.frame() %>%
-  rownames_to_column() %>% 
+  rownames_to_column() %>%
   rename("barcode_metagenomics"="rowname")
 
-df_w_meta <- left_join(tax_species_for_merge,final_metadata,by="barcode_metagenomics") %>% 
-  distinct(barcode_metagenomics, .keep_all = TRUE) 
+df_w_meta <- left_join(tax_species_for_merge,final_metadata,by="barcode_metagenomics") %>%
+  distinct(barcode_metagenomics, .keep_all = TRUE)
 
 species.data<-df_w_meta %>% select(matches("SGB|EUK"))
 
-oralspecies <- read_csv('oral_vs_gut.csv') 
+oralspecies <- read_csv('oral_vs_gut.csv')
 
-nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% 
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>% 
+nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>%
+  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>%
   mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
   mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
   mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
@@ -56,14 +57,14 @@ nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) %>% #nonlean case is 1, lean case is 0
   mutate(nonlean_vs_control = case_when(bmi17v >= 25 & case==1 ~ 1, case==0 ~ 0)) %>%
   mutate(lean_vs_control = case_when(bmi17v < 25 & case==1 ~ 1, case==0 ~ 0))
-nafld_data_species <- nafld_data %>% column_to_rownames("alias_id") %>% select(matches("SGB|EUK")) 
+nafld_data_species <- nafld_data %>% column_to_rownames("alias_id") %>% select(matches("SGB|EUK"))
 
 ################################################################################
 ## metabolites
 ################################################################################
-unfiltered_mbx <- read.delim("annotated_metabolites_w_methods.tsv",row.names=1) %>% select(starts_with("X")) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metabolomics = rowname) 
+unfiltered_mbx <- read.delim("annotated_metabolites_w_methods.tsv",row.names=1) %>% select(starts_with("X")) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metabolomics = rowname)
 
-###Normalize the mbx by methods. 
+###Normalize the mbx by methods.
 unfiltered_mbx_test <- read.delim("annotated_metabolites_w_methods.tsv",row.names=1) %>% select(starts_with("X")) %>% rownames_to_column("metabolite")
 df <- separate(unfiltered_mbx_test, metabolite, into = c("column1", "column2", "column3"), sep = "_")
 df <- df[duplicated(df$column1) | duplicated(df$column1, fromLast = TRUE), ]
@@ -76,9 +77,9 @@ grouped_data <- split(filtered_df, filtered_df$column1)
 calculate_ratios <- function(group) {
   tf_rows <- group[group$column3 == "TF", ]
   qi_rows <- group[group$column3 == "QI", ]
-  
+
   ratios <- (tf_rows[, 4:ncol(group)]+1) / (qi_rows[, 4:ncol(group)]+1)
-  
+
   return(ratios)
 }
 # Create an empty dataframe to store the ratios
@@ -86,10 +87,10 @@ ratios_df <- data.frame()
 
 for (metabolite in names(grouped_data)) {
   group <- grouped_data[[metabolite]]
-  
+
   # Calculate the ratios for the current metabolite
   ratios <- calculate_ratios(group)
-  
+
   # Add the ratios to the dataframe
   ratios_df <- rbind(ratios_df, ratios)
 }
@@ -105,13 +106,13 @@ df_final <- data.frame(matrix(ncol = 0, nrow = nrow(unfiltered_mbx)))
 for (p in prefixes) {
   # Find all columns that start with the prefix and store their names in a vector
   cols <- grep(p, names(unfiltered_mbx), value = TRUE, fixed = TRUE)
-  
+
   # If there is only one column with this prefix, keep it as is
   if (length(cols) == 1) {
     df_final <- cbind(df_final, unfiltered_mbx[, cols, drop = FALSE])
   } else if (length(cols) > 1) {
     # If there are multiple columns with this prefix, find the column with the highest value
-    max_col <- apply(unfiltered_mbx[, cols], 1, max) %>% as.data.frame() 
+    max_col <- apply(unfiltered_mbx[, cols], 1, max) %>% as.data.frame()
     names(max_col)[names(max_col) == "."] <- p
     df_final <- cbind(df_final, max_col)
   }
@@ -123,7 +124,7 @@ df_final_join <- df_final %>% rownames_to_column("barcode_metabolomics")
 
 final_metadata_mbx <- read.delim('meta_df.tsv',row.names=1)
 final_metadata_mbx <- final_metadata_mbx[!duplicated(final_metadata_mbx$barcode_metabolomics),]
-df_w_meta_mbx <- left_join(df_final_join,final_metadata_mbx,by="barcode_metabolomics") 
+df_w_meta_mbx <- left_join(df_final_join,final_metadata_mbx,by="barcode_metabolomics")
 
 mbx_list<-names(df_final)
 mbx.data<-df_w_meta_mbx %>% select(all_of(mbx_list))
@@ -131,8 +132,8 @@ mbx.data<-df_w_meta_mbx %>% select(all_of(mbx_list))
 ###########
 ###NAFLD###
 ###########
-nafld_data_mbx<-df_w_meta_mbx %>% filter(cohort=="NAFLD" | case==0) %>% 
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>% 
+nafld_data_mbx<-df_w_meta_mbx %>% filter(cohort=="NAFLD" | case==0) %>%
+  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>%
   mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
   mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
   mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
@@ -152,9 +153,9 @@ nafld_data_mbx_id <- nafld_data_mbx %>%
 ################################################################################
 mtxpathway<-read_tsv("pathabundance_relab_nospecial.tsv")
 names(mtxpathway) = gsub("_Abundance", "", names(mtxpathway))
-mtx_pathway<-mtxpathway %>% column_to_rownames("# Pathway") %>% t() %>% as.data.frame() 
+mtx_pathway<-mtxpathway %>% column_to_rownames("# Pathway") %>% t() %>% as.data.frame()
 samples <- mtx_pathway %>% rownames_to_column()
-samplenames = samples$rowname 
+samplenames = samples$rowname
 mtx_pathway_unstratified<-mtx_pathway %>% rownames_to_column("barcode_metagenomics")
 
 final_metadata_mtx <- read.delim('meta_df.tsv',row.names=1)
@@ -167,37 +168,37 @@ nafld_data_mtx_pathway<-nafld_data_mtx_pathway[order(row.names(nafld_data_mtx_pa
 ################################################################################
 ## Virome
 ################################################################################
-virome_profile <- read.delim("viromeprofile_v3.tsv",row.names=1) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metagenomics = rowname) 
+virome_profile <- read.delim("viromeprofile_v3.tsv",row.names=1) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metagenomics = rowname)
 
 virome_list<-virome_profile %>% select(-barcode_metagenomics)
 
 final_metadata_vir <- read.delim('meta_df.tsv',row.names=1)
 final_metadata_vir <- final_metadata_vir[!duplicated(final_metadata_vir$barcode_metagenomics),]
-df_w_meta_vir <- left_join(virome_profile,final_metadata_vir,by="barcode_metagenomics") 
+df_w_meta_vir <- left_join(virome_profile,final_metadata_vir,by="barcode_metagenomics")
 
 nafld_data_virome<-df_w_meta_vir %>% filter(cohort=="NAFLD" | case==0) %>% select(c(names(virome_list),"alias_id")) %>% column_to_rownames("alias_id")
 nafld_data_virome<-nafld_data_virome[order(row.names(nafld_data_virome)), ]
 
 ################################################################################
-## ML MODELING  
+## ML MODELING
 ################################################################################
 
 # expecting features in rows and samples in columns (we are good)
 bugs.s.siam <- t(nafld_data_species)
-mbx.s.siam <- t(nafld_data_mbx_id) 
+mbx.s.siam <- t(nafld_data_mbx_id)
 #normalize mbx data
 # Calculate col sums
 col_sums <- colSums(mbx.s.siam, na.rm = TRUE)
 # Normalize each col to sum to 1
 norm.mbx.s.siam <- t(apply(mbx.s.siam, 1, function(col) col / col_sums))
 
-meta.siam <- nafld_data %>% 
+meta.siam <- nafld_data %>%
   select('alias_id', 'case', 'age', 'db17', 'bmi17v', 'act17v', 'aheiv2010_15') %>%
   column_to_rownames('alias_id')
-# label cases vs. controls 
+# label cases vs. controls
 meta.siam_label <- create.label(meta = meta.siam, label = 'case', case = '1')
 
-# create a siamcat object 
+# create a siamcat object
 siam.all <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = meta.siam)
 siam.all.mbx <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = meta.siam)
 
@@ -241,12 +242,12 @@ siam.all.mbx <-  create.data.split(
 set.seed(1123)
 siam.all <- train.model(
   siam.all,
-  method = "randomForest" 
+  method = "randomForest"
 )
 set.seed(1123)
 siam.all.mbx <- train.model(
   siam.all.mbx,
-  method = "randomForest" 
+  method = "randomForest"
 )
 
 # get information about the model type
@@ -282,7 +283,7 @@ oralspecies_selected<-oralspecies %>% filter(class=="oral")
 oral_dataframe<-nafld_data_species_and_case[, colnames(nafld_data_species_and_case) %in% oralspecies_selected$speciesname]
 oralbugs.s.siam<-t(oral_dataframe)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.oral <- siamcat (feat = oralbugs.s.siam, label = meta.siam_label, meta = meta.siam)
 
 # feature selection
@@ -300,7 +301,7 @@ siam.all.oral <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.oral <- train.model(
   siam.all.oral,
@@ -317,10 +318,10 @@ siam.all.oral <-  evaluate.predictions(siam.all.oral)
 model.evaluation.plot(siam.all.oral,
                       fn.plot = './eval_plot.oral_RF.pdf')
 
-### mtx pathway 
+### mtx pathway
 mtx.s.siam<-t(nafld_data_mtx_pathway)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.mtx <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = meta.siam)
 
 # feature selection
@@ -338,7 +339,7 @@ siam.all.mtx <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.mtx <- train.model(
   siam.all.mtx,
@@ -357,7 +358,7 @@ model.evaluation.plot(siam.all.mtx,
 ### Virome
 vir.s.siam<-t(nafld_data_virome)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.vir <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = meta.siam)
 
 # feature selection
@@ -374,7 +375,7 @@ siam.all.vir <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.vir <- train.model(
   siam.all.vir,
@@ -406,7 +407,7 @@ vir.s.siam_common <- vir.s.siam[, common_samples]
 # Combine matrices using rbind
 all_features <- rbind(bugs.s.siam_common, mtx.s.siam_common, norm.mbx.s.siam_common, vir.s.siam_common)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.vl <- siamcat (feat = all_features, label = meta.siam_label, meta = meta.siam)
 
 # feature selection
@@ -424,14 +425,14 @@ siam.all.vl <-  create.data.split(
   num.resample = 2
 )
 
-siam.all.vl <- add.meta.pred(siam.all.vl, 
+siam.all.vl <- add.meta.pred(siam.all.vl,
                              pred.names=c('age',
                                           'db17',
                                           'bmi17v',
                                           'act17v',
                                           'aheiv2010_15'))
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.vl <- train.model(
   siam.all.vl,
@@ -467,13 +468,13 @@ model.evaluation.plot('Taxa' = siam.all,
 ######nonlean vs lean
 ############################
 ############################
-# label cases vs. controls 
-new.meta.siam <- nafld_data %>% 
+# label cases vs. controls
+new.meta.siam <- nafld_data %>%
   select('alias_id', 'lean_vs_nonlean_case', 'age', 'db17', 'bmi17v', 'act17v', 'aheiv2010_15') %>%
   column_to_rownames('alias_id')
 meta.siam_label <- create.label(meta = new.meta.siam, label = 'lean_vs_nonlean_case', case = '1')
 
-# create a siamcat object 
+# create a siamcat object
 siam.all <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
 siam.all.mbx <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
 
@@ -505,12 +506,12 @@ siam.all.mbx <-  create.data.split(
 set.seed(1123)
 siam.all <- train.model(
   siam.all,
-  method = "randomForest"  
+  method = "randomForest"
 )
 set.seed(1123)
 siam.all.mbx <- train.model(
   siam.all.mbx,
-  method = "randomForest"  
+  method = "randomForest"
 )
 
 # get information about the model type
@@ -529,10 +530,10 @@ siam.predict <- pred_matrix(siam.all)
 siam.all <-  evaluate.predictions(siam.all)
 siam.all.mbx <-  evaluate.predictions(siam.all.mbx)
 
-### mtx pathway 
+### mtx pathway
 mtx.s.siam<-t(nafld_data_mtx_pathway)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.mtx <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -550,11 +551,11 @@ siam.all.mtx <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.mtx <- train.model(
   siam.all.mtx,
-  method = "randomForest" 
+  method = "randomForest"
 )
 
 # make predictions using the data-split and the models trained in previous step
@@ -566,7 +567,7 @@ siam.all.mtx <-  evaluate.predictions(siam.all.mtx)
 ### Virome
 vir.s.siam<-t(nafld_data_virome)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.vir <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -584,11 +585,11 @@ siam.all.vir <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.vir <- train.model(
   siam.all.vir,
-  method = "randomForest" 
+  method = "randomForest"
 )
 
 # make predictions using the data-split and the models trained in previous step
@@ -613,7 +614,7 @@ vir.s.siam_common <- vir.s.siam[, common_samples]
 # Combine matrices using rbind
 all_features <- rbind(bugs.s.siam_common, mtx.s.siam_common, norm.mbx.s.siam_common, vir.s.siam_common)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.vl <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -631,14 +632,14 @@ siam.all.vl <-  create.data.split(
   num.resample = 2
 )
 
-siam.all.vl <- add.meta.pred(siam.all.vl, 
+siam.all.vl <- add.meta.pred(siam.all.vl,
                              pred.names=c('age',
                                           'db17',
                                           #'bmi17v',
                                           'act17v',
                                           'aheiv2010_15'))
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.vl <- train.model(
   siam.all.vl,
@@ -664,13 +665,13 @@ model.evaluation.plot('Taxa' = siam.all,
 ######nonlean vs control
 ############################
 ############################
-# label cases vs. controls 
-new.meta.siam <- nafld_data %>% 
+# label cases vs. controls
+new.meta.siam <- nafld_data %>%
   select('alias_id', 'nonlean_vs_control', 'age', 'db17', 'bmi17v', 'act17v', 'aheiv2010_15') %>%
   column_to_rownames('alias_id')
 meta.siam_label <- create.label(meta = new.meta.siam, label = 'nonlean_vs_control', case = '1')
 
-# create a siamcat object 
+# create a siamcat object
 siam.all <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
 siam.all.mbx <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
 
@@ -702,12 +703,12 @@ siam.all.mbx <-  create.data.split(
 set.seed(1123)
 siam.all <- train.model(
   siam.all,
-  method = "randomForest"  
+  method = "randomForest"
 )
 set.seed(1123)
 siam.all.mbx <- train.model(
   siam.all.mbx,
-  method = "randomForest"  
+  method = "randomForest"
 )
 
 # get information about the model type
@@ -726,10 +727,10 @@ siam.predict <- pred_matrix(siam.all)
 siam.all <-  evaluate.predictions(siam.all)
 siam.all.mbx <-  evaluate.predictions(siam.all.mbx)
 
-### mtx pathway 
+### mtx pathway
 mtx.s.siam<-t(nafld_data_mtx_pathway)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.mtx <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -747,11 +748,11 @@ siam.all.mtx <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.mtx <- train.model(
   siam.all.mtx,
-  method = "randomForest" 
+  method = "randomForest"
 )
 
 # make predictions using the data-split and the models trained in previous step
@@ -763,7 +764,7 @@ siam.all.mtx <-  evaluate.predictions(siam.all.mtx)
 ### Virome
 vir.s.siam<-t(nafld_data_virome)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.vir <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -780,7 +781,7 @@ siam.all.vir <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.vir <- train.model(
   siam.all.vir,
@@ -809,7 +810,7 @@ vir.s.siam_common <- vir.s.siam[, common_samples]
 # Combine matrices using rbind
 all_features <- rbind(bugs.s.siam_common, mtx.s.siam_common, norm.mbx.s.siam_common, vir.s.siam_common)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.vl <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -827,14 +828,14 @@ siam.all.vl <-  create.data.split(
   num.resample = 2
 )
 
-siam.all.vl <- add.meta.pred(siam.all.vl, 
+siam.all.vl <- add.meta.pred(siam.all.vl,
                              pred.names=c('age',
                                           'db17',
                                           #'bmi17v',
                                           'act17v',
                                           'aheiv2010_15'))
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.vl <- train.model(
   siam.all.vl,
@@ -859,13 +860,13 @@ model.evaluation.plot('Taxa' = siam.all,
 ######lean vs control
 ############################
 ############################
-# label cases vs. controls 
-new.meta.siam <- nafld_data %>% 
+# label cases vs. controls
+new.meta.siam <- nafld_data %>%
   select('alias_id', 'lean_vs_control', 'age', 'db17', 'bmi17v', 'act17v', 'aheiv2010_15') %>%
   column_to_rownames('alias_id')
 meta.siam_label <- create.label(meta = new.meta.siam, label = 'lean_vs_control', case = '1')
 
-# create a siamcat object 
+# create a siamcat object
 siam.all <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
 siam.all.mbx <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
 
@@ -897,12 +898,12 @@ siam.all.mbx <-  create.data.split(
 set.seed(1123)
 siam.all <- train.model(
   siam.all,
-  method = "randomForest"  
+  method = "randomForest"
 )
 set.seed(1123)
 siam.all.mbx <- train.model(
   siam.all.mbx,
-  method = "randomForest"  
+  method = "randomForest"
 )
 
 # get information about the model type
@@ -921,10 +922,10 @@ siam.predict <- pred_matrix(siam.all)
 siam.all <-  evaluate.predictions(siam.all)
 siam.all.mbx <-  evaluate.predictions(siam.all.mbx)
 
-### mtx pathway 
+### mtx pathway
 mtx.s.siam<-t(nafld_data_mtx_pathway)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.mtx <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -941,7 +942,7 @@ siam.all.mtx <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.mtx <- train.model(
   siam.all.mtx,
@@ -957,7 +958,7 @@ siam.all.mtx <-  evaluate.predictions(siam.all.mtx)
 ### Virome
 vir.s.siam<-t(nafld_data_virome)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.vir <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -974,7 +975,7 @@ siam.all.vir <-  create.data.split(
   num.resample = 2
 )
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.vir <- train.model(
   siam.all.vir,
@@ -1003,7 +1004,7 @@ vir.s.siam_common <- vir.s.siam[, common_samples]
 # Combine matrices using rbind
 all_features <- rbind(bugs.s.siam_common, mtx.s.siam_common, norm.mbx.s.siam_common, vir.s.siam_common)
 
-# create a siamcat object 
+# create a siamcat object
 siam.all.vl <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
@@ -1021,14 +1022,14 @@ siam.all.vl <-  create.data.split(
   num.resample = 2
 )
 
-siam.all.vl <- add.meta.pred(siam.all.vl, 
+siam.all.vl <- add.meta.pred(siam.all.vl,
                              pred.names=c('age',
                                           'db17',
                                           #'bmi17v',
                                           'act17v',
                                           'aheiv2010_15'))
 
-# model training, default setting 
+# model training, default setting
 set.seed(1123)
 siam.all.vl <- train.model(
   siam.all.vl,
