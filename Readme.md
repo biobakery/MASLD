@@ -1,6 +1,6 @@
 ##### [Replace the contents this README.MD file with the appropriate "Users manual" needed for the workflow.]
 
-# Private Analysis Workflows Template
+# MASLD
 
 
 #### Introduction
