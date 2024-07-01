@@ -118,6 +118,8 @@ fit_data <- Maaslin2(
   max_significance = 0.20, # q-value threshold for significance. default is 0.25
   random_effects = NULL,
   fixed_effects = c('case', 'age', 'db17', 'bmi17v', 'act17v', 'aheiv2010_15'),
+  min_prevalence = 0,
+  min_abundance = 0,
   correction = "BH",
   standardize = TRUE,
   cores = 1,
