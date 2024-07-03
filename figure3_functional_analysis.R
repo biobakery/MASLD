@@ -388,7 +388,6 @@ require(reshape2)
 require(graphics)
 selected_pathways <- c("GLUTORN-PWY: L-ornithine biosynthesis I",
                        "PWY-2941: L-lysine biosynthesis II",
-                       "PWY-724: superpathway of L-lysine, L-threonine and L-methionine biosynthesis II",
                        "ARGSYN-PWY: L-arginine biosynthesis I (via L-ornithine)",
                        "ARGSYNBSUB-PWY: L-arginine biosynthesis II (acetyl cycle)",
                        "PWY-7977: L-methionine biosynthesis IV",
