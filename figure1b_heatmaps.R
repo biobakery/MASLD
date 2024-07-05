@@ -66,13 +66,30 @@ log_nafld_data_species[log_nafld_data_species == 0] <- df.min
 log_nafld_data_species <- log10(log_nafld_data_species)
 ann_colors = list(
   case = c("0" = "#999999", "1" = "#E69F00"))
-single_gradient_colors <- colorRampPalette(c("lightgray","lightgreen", "darkgreen"))(100)
+# Customize the magma color palette to start from light gray
+magma_colors <- viridis::viridis(100, option = "A")
+magma_colors[1] <- "#D3D3D3"  # Change the first color to light gray
 #without rownames and colnames
-plot_species<-pheatmap(log_nafld_data_species,cluster_rows=FALSE, cluster_cols=FALSE, show_rownames = F, show_colnames = F, annotation_col=casebar, annotation_colors = ann_colors,legend=F)
-#5*10
+plot_species <- pheatmap(log_nafld_data_species, 
+                         cluster_rows = FALSE, 
+                         cluster_cols = FALSE, 
+                         show_rownames = FALSE, 
+                         show_colnames = FALSE, 
+                         annotation_col = casebar, 
+                         annotation_colors = ann_colors, 
+                         legend = FALSE, 
+                         color = magma_colors)
+# Reorder the columns based on the clustered_species
 column_order <- clustered_species$tree_col$order
 log_nafld_data_species_reordered <- log_nafld_data_species[, column_order]
-clustered_species_reordered<-pheatmap(log_nafld_data_species_reordered,cluster_rows=FALSE, cluster_cols=F, show_rownames = F, show_colnames = F, legend=F,color = single_gradient_colors)
+# Create the reordered heatmap
+clustered_species_reordered <- pheatmap(log_nafld_data_species_reordered, 
+                                        cluster_rows = FALSE, 
+                                        cluster_cols = FALSE, 
+                                        show_rownames = FALSE, 
+                                        show_colnames = FALSE, 
+                                        legend = FALSE, 
+                                        color = magma_colors)
 
 #get annotation bar for nonlean, lean, control
 #selected_top5 <- species.nafld.data %>% t() %>% as.data.frame()
@@ -90,8 +107,7 @@ clustered_species_reordered<-pheatmap(log_nafld_data_species_reordered,cluster_r
 #log_nafld_data_species <- log10(log_nafld_data_species)
 #ann_colors = list(
 #  lean_vs_nonlean_case = c("0" = "#999999", "1" = "blue", "2" = "red"))
-#single_gradient_colors <- colorRampPalette(c("lightgray","lightgreen", "darkgreen"))(100)
-#clustered_species<-pheatmap(log_nafld_data_species,cluster_rows=FALSE, cluster_cols=T, show_rownames = F, show_colnames = F, annotation_col=casebar, annotation_colors = ann_colors,legend=T,color = single_gradient_colors)
+#clustered_species<-pheatmap(log_nafld_data_species,cluster_rows=FALSE, cluster_cols=T, show_rownames = F, show_colnames = F, annotation_col=casebar, annotation_colors = ann_colors,legend=T,color = magma_colors)
 
 ###virome###
 virome_file <- read.delim("~/b2b/viromeprofile_v3.tsv",row.names=1) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metagenomics = rowname)
@@ -131,7 +147,7 @@ plot_virome<-pheatmap(log_nafld_data_virome,cluster_rows=FALSE, cluster_cols=FAL
 
 column_order <- clustered_species$tree_col$order
 log_nafld_data_virome_reordered <- log_nafld_data_virome[, column_order]
-clustered_virome_reordered<-pheatmap(log_nafld_data_virome_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = single_gradient_colors)
+clustered_virome_reordered<-pheatmap(log_nafld_data_virome_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = magma_colors)
 
 ###pathway###
 pathway_file <- read.delim("pathabundance_unstrat.tsv",row.names=1) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metagenomics = rowname)
@@ -171,7 +187,7 @@ log_nafld_data_pathway_only_five<-log_nafld_data_pathway[1:(nrow(log_nafld_data_
 plot_pathway<-pheatmap(log_nafld_data_pathway_only_five,cluster_rows=FALSE, cluster_cols=FALSE, show_rownames = F, show_colnames = F, na_col="white",annotation_col=casebar, annotation_colors = ann_colors,legend=F)
 #7*10
 log_nafld_data_pathway_only_five_reordered <- log_nafld_data_pathway_only_five[, column_order]
-clustered_pathway_reordered<-pheatmap(log_nafld_data_pathway_only_five_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = single_gradient_colors)
+clustered_pathway_reordered<-pheatmap(log_nafld_data_pathway_only_five_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = magma_colors)
 
 ###MTX pathway###
 mtxpathway<-read_tsv("pathabundance_relab_nospecial.tsv")
@@ -215,7 +231,7 @@ log_nafld_data_pathway_mtx <- log10(log_nafld_data_pathway_mtx)
 plot_mtx<-pheatmap(log_nafld_data_pathway_mtx,cluster_rows=FALSE, cluster_cols=FALSE, show_rownames = F, show_colnames = F,na_col = "white",annotation_col=casebar, annotation_colors = ann_colors,legend=F)
 #5*10
 log_nafld_data_pathway_mtx_reordered <- log_nafld_data_pathway_mtx[, column_order]
-clustered_mtx_reordered<-pheatmap(log_nafld_data_pathway_mtx_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = single_gradient_colors)
+clustered_mtx_reordered<-pheatmap(log_nafld_data_pathway_mtx_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = magma_colors)
 
 ###mbx###
 unfiltered_mbx <- read.delim("annotated_metabolites_w_methods.tsv",row.names=1) %>% select(starts_with("X")) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metabolomics = rowname)
@@ -338,7 +354,7 @@ log_nafld_data_mbx <- log2(log_nafld_data_mbx)
 plot_mbx<-pheatmap(log_nafld_data_mbx,cluster_rows=FALSE, cluster_cols=FALSE, show_rownames = F, show_colnames = F,na_col = "white", annotation_col=casebar, annotation_colors = ann_colors,legend=F)
 #5*10
 log_nafld_data_mbx_reordered <- log_nafld_data_mbx[, column_order]
-clustered_mbx_reordered<-pheatmap(log_nafld_data_mbx_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = single_gradient_colors)
+clustered_mbx_reordered<-pheatmap(log_nafld_data_mbx_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = magma_colors)
 
 library(gridExtra)
 library(grid)
