@@ -12,6 +12,7 @@ library(ggplot2)
 library(ggrepel)
 library(pheatmap)
 library(RColorBrewer)
+library(viridis)
 
 setwd("~/b2b")
 ###species###
