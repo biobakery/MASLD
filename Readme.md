@@ -1,4 +1,4 @@
-# Transkingdom multi-omic dysbiosis in metabolic dysfunction-associated steatotic liver disease (MASLD)
+# Multi-omic analysis reveals transkingdom dysbiosis in metabolic dysfunction-associated steatotic liver disease (MASLD)
 
 
 #### Description
@@ -7,18 +7,19 @@ This repository contains the analysis programs used for the study that delve int
 
 #### Included scripts
 
-- alphadiversity_species.R
-- pcoa_species_mbx.R
-- permanova_species_mbx_virome.R
-- table1.R
-- figure1b_heatmaps.R
-- figure2_maaslin_species.R
-- figure3_functional_analysis.R
-- figure4_maaslin_mbx.R
-- figure5_maaslin_virome.R
-- figure6_random_forest.R
-- extendeddatafig2b.R
-
+- Acylcarnitine_heatmaps.R
+- Alpha_diversity_species.R
+- Difference_in_correlations.R
+- Figure1B_PERMANOVA_heatmap.R
+- Figure1C_heatmaps.R
+- Figure2_MaAsLin_species.R
+- Figure3_functional_analysis.R
+- Figure4_MaAsLin_MBX.R
+- Figure5_MaAsLin_virome.R
+- Figure6_random_forest.R
+- PCoA_species_MBX.R
+- PERMANOVA_species_MBX_virome.R
+- Table1.R
 
 #### Data source
 

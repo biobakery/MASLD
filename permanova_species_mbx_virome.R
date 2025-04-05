@@ -1,8 +1,7 @@
 ##################################################
 #R program for performing PERMANOVA
 #Figure 5A
-#Extended Data Figure 1A
-#Extended Data Figure 2A
+#Extended Data Figure 1A & Extended Data Figure 2A
 ##################################################
 
 library(vegan)
@@ -46,12 +45,6 @@ species.data.filtered<-species.data.filtered%>% filter(row.names(species.data.fi
 ###########
 #211 nafld cases and 502 controls (193 matched and 309 unmatched controls)
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% 
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>% 
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
-  mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
-  mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) #nonlean case is 1, lean case is 0 
 
 sp_w_meta <- df_w_meta %>% filter(cohort=="NAFLD" | case==0)
@@ -138,11 +131,6 @@ mbx.data<-df_w_meta %>% select(all_of(mbx_list)) %>% as.data.frame
 ###NAFLD###
 ###########
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% 
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>% 
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
-  mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
   mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0))
 
 nafld_data_mbx <- nafld_data %>% select(all_of(mbx_list)) 
@@ -151,7 +139,7 @@ mbx_w_meta <- df_w_meta
 mbx_df <- mbx.data
 mbx_NAFLD_df<-mbx_w_meta %>% filter(cohort=="NAFLD" | case==0) 
 
-#Extended Data Figure 1A
+#Extended Data Figure 2A
 mbx_NAFLD_perm <- adonis2(mbx_NAFLD_df[, colnames(mbx_NAFLD_df) %in% colnames(mbx_df)]~case + age + aheiv2010_15 + act17v + bmi17v + db17 + plate, data = mbx_NAFLD_df, permutations = 999, method = "bray", sqrt.dist = FALSE, add = FALSE, by = 'margin')
 mbx_NAFLD_perm
 
@@ -160,7 +148,6 @@ virome_profile <- read.delim("MGXBAQLaVa_VGB_table.tsv",row.names=1) %>% t() %>%
 virome_profile$barcode_metagenomics <- gsub("_Abundance.RPKs", "", virome_profile$barcode_metagenomics)
 
 virome_profile <- virome_profile %>% column_to_rownames("barcode_metagenomics")
-# Calculate total RPKs for each sample
 virome_profile$total_rpks <- rowSums(virome_profile)
 
 # Convert RPK values to relative abundance
@@ -188,12 +175,6 @@ virome.nafld.data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% select(c(
 virome.nafld.data<-virome.nafld.data[order(row.names(virome.nafld.data)), ]
 
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% 
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>% 
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
-  mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
-  mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) #nonlean case is 1, lean case is 0
 
 nafld_data_virome <- nafld_data %>% select(c(names(virome_list)))

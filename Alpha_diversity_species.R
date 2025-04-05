@@ -1,4 +1,3 @@
-#!/usr/bin/env Rscript
 ##################################################
 #R program for creating alpha diversity plots
 #Extended Data Figure 1BC
@@ -21,7 +20,7 @@ final_metadata <- final_metadata[!duplicated(final_metadata$barcode_metagenomics
 df_w_meta <- left_join(unfiltered_species,final_metadata,by="barcode_metagenomics") 
 
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% 
-  mutate(lean_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 'Non-leanNAFLD', bmi17v <25 & case==1 ~ 'LeanNAFLD', case==0 ~ 'Controls')) 
+  mutate(lean_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 'Non-leanMASLD', bmi17v <25 & case==1 ~ 'LeanMASLD', case==0 ~ 'Controls')) 
 
 ################################################################################
 ## shannon index
@@ -44,36 +43,25 @@ ggplot(data = alpha3,
   geom_jitter(shape = 16, position = position_jitter(0.1)) +
   theme_classic(base_size = 18) +
   theme(legend.position = "none") +
-  xlab("NAFLD") +
   ylab("Alpha diversity\n(Shannon Index)") +
   geom_signif(comparisons = list(c("0", "1")),
               test=wilcox.test,
               tip_length = 0,
               map_signif_level = TRUE) 
-#6*6
-
-ggsave(filename = file.path("output", "diversity.pdf"), 
-       plot = last_plot(),
-       scale = 1, 
-       width = 10,
-       height = 10,
-       units = "in",
-       dpi = 300)
 
 rm(alpha, alpha2, alpha3)
 
 ###Extended Data Figure 1C
-#for nonlean vs lean vs controls
+# nonlean case vs lean case vs control
 ggplot(data = alpha3, aes(x = as.factor(lean_nonlean_control), y = shannon, fill = as.factor(lean_nonlean_control))) +
-  scale_fill_manual(values = c("Non-leanNAFLD" = "#FF0000", "LeanNAFLD" = "#0000FF", "Controls" = "#999999")) +
+  scale_fill_manual(values = c("Non-leanMASLD" = "#FF0000", "LeanMASLD" = "#0000FF", "Controls" = "#999999")) +
   geom_boxplot(notch = FALSE) +
   geom_jitter(shape = 16, position = position_jitter(0.1)) +
   theme_classic(base_size = 18) +
   theme(legend.position = "none") +
   xlab("Group") +
   ylab("Alpha diversity\n(Shannon Index)") +
-  geom_signif(comparisons = list(c("Non-leanNAFLD", "LeanNAFLD"), c("LeanNAFLD", "Controls"), c("Non-leanNAFLD", "Controls")),
+  geom_signif(comparisons = list(c("Non-leanMASLD", "LeanMASLD"), c("LeanMASLD", "Controls"), c("Non-leanMASLD", "Controls")),
               tip_length = 0.02,
-              y_position = c(4.8, 4.8, 5), # Adjust the y positions for each comparison if needed
+              y_position = c(4.8, 4.8, 5), 
               map_signif_level = TRUE)
-#6*10

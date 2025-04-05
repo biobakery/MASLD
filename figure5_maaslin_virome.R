@@ -1,4 +1,3 @@
-#!/usr/bin/env Rscript
 ##################################################
 #R program for creating Figure 5
 ##################################################
@@ -14,13 +13,13 @@ library(viridis)
 library(ggsignif)
 library(lme4)
 library(gridExtra)
+library(vegan)
 
 setwd("~/b2b")
 virome_profile <- read.delim("MGXBAQLaVa_VGB_table.tsv",row.names=1) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metagenomics = rowname)
 virome_profile$barcode_metagenomics <- gsub("_Abundance.RPKs", "", virome_profile$barcode_metagenomics)
 
 virome_profile <- virome_profile %>% column_to_rownames("barcode_metagenomics")
-# Calculate total RPKs for each sample
 virome_profile$total_rpks <- rowSums(virome_profile)
 
 # Convert RPK values to relative abundance
@@ -34,7 +33,6 @@ final_metadata_vir <- final_metadata_vir[!duplicated(final_metadata_vir$barcode_
 df_w_meta_vir <- left_join(virome_profile_new,final_metadata_vir,by="barcode_metagenomics") %>%
   distinct(barcode_metagenomics, .keep_all = TRUE)
 
-#alias id key
 alias_key<-final_metadata_vir %>% select(alias_id, barcode_metagenomics)
 
 VGBnames <- read.delim("VGB_taxonomy.tsv",row.names=1) %>% as.data.frame() %>% rownames_to_column() %>% rename(VGB = rowname)
@@ -44,14 +42,12 @@ VGBnames$fullname <- ifelse(VGBnames$VGB == VGBnames$Reference.Species,
                             paste("Unclassified species", VGBnames$VGB),
                             paste(VGBnames$Reference.Species, VGBnames$VGB))
 VGBnames_list <- VGBnames %>% select(VGB,fullname)
+
 ###########
 ###NAFLD###
 ###########
 nafld_data<-df_w_meta_vir %>% filter(cohort=="NAFLD" | case==0) %>%
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>%
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
+  mutate(lean_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 'Non-leanMASLD', bmi17v <25 & case==1 ~ 'LeanMASLD', case==0 ~ 'Controls')) %>%
   mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
   mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) #nonlean case is 1, lean case is 0
@@ -73,7 +69,6 @@ alpha2 <- as.data.frame(vegan::diversity(alpha, index = "shannon")) %>%
 alpha3 <- nafld_data %>%
   left_join(alpha2, by = "barcode_metagenomics")
 
-library(ggsignif)
 ggplot(data = alpha3,
        aes(x = as.factor(case), y = shannon, fill = as.factor(case))) +
   scale_fill_manual(values = c("0" = "#999999", "1" = "#E69F00")) +
@@ -81,36 +76,33 @@ ggplot(data = alpha3,
   geom_jitter(shape = 16, position = position_jitter(0.1)) +
   theme_classic(base_size = 18) +
   theme(legend.position = "none") +
-  xlab("MASLD") +
   ylab("Alpha diversity\n(Shannon Index)") +
   geom_signif(comparisons = list(c("0", "1")),
               test=wilcox.test,
               tip_length = 0,
               map_signif_level = TRUE)
-#6*6
 
-###Extended Data Figure 3A
-#for nonlean vs lean vs controls
+###Extended Data Figure 5A
+# nonlean case vs lean case vs control
 ggplot(data = alpha3, aes(x = as.factor(lean_nonlean_control), y = shannon, fill = as.factor(lean_nonlean_control))) +
-  scale_fill_manual(values = c("Non-leanNAFLD" = "#FF0000", "LeanNAFLD" = "#0000FF", "Controls" = "#999999")) +
+  scale_fill_manual(values = c("Non-leanMASLD" = "#FF0000", "LeanMASLD" = "#0000FF", "Controls" = "#999999")) +
   geom_boxplot(notch = FALSE) +
   geom_jitter(shape = 16, position = position_jitter(0.1)) +
   theme_classic(base_size = 18) +
   theme(legend.position = "none") +
   xlab("Group") +
   ylab("Alpha diversity\n(Shannon Index)") +
-  geom_signif(comparisons = list(c("Non-leanNAFLD", "LeanNAFLD"), c("LeanNAFLD", "Controls"), c("Non-leanNAFLD", "Controls")),
+  geom_signif(comparisons = list(c("Non-leanMASLD", "LeanMASLD"), c("LeanMASLD", "Controls"), c("Non-leanMASLD", "Controls")),
               tip_length = 0.02,
               y_position = c(5.8, 5.8, 6),
               map_signif_level = TRUE)
-#6*10
 
 #adjusted for age, most recent diabetes, cumulative avg of physical activity, cum avg of bmi, cum avg of AHEI
 fit_data <- Maaslin2(
-  input_data = nafld_data %>% select(c(names(virome_list))), #species
+  input_data = nafld_data %>% select(c(names(virome_list))), 
   input_metadata = nafld_data %>% select(!c(names(virome_list))), #metadata
   output="output_virome_v0.3",
-  normalization = "none", #our data already normalized.
+  normalization = "none", #our data already normalized
   transform = "LOG",
   analysis_method = "LM",
   max_significance = 0.20, # q-value threshold for significance. default is 0.25
@@ -123,6 +115,7 @@ fit_data <- Maaslin2(
   plot_scatter = TRUE,
   heatmap_first_n = 50)
 
+###Figure 5C
 ###Volcano plot
 results <- fit_data[["results"]]
 
@@ -157,10 +150,9 @@ top_bugs <- bind_rows(
 
 options(ggrepel.max.overlaps = Inf)
 
-###Figure 5C
 ggplot(results_with_names, aes(x = coef,
                                y = -log(qval, 10),
-                               colour= color)) + # -log10 conversion
+                               colour= color)) + 
   geom_point(alpha=0.4, size=3.5) +
   xlab(expression("B-coefficient")) +
   ylab(expression("-log"[10] * "(FDR p-value)")) +
@@ -181,11 +173,7 @@ ggplot(results_with_names, aes(x = coef,
                    color = "black",
                    fontface='bold')
 
-ggsave(filename = file.path("output_virome_v0.3", "volcano.pdf"),
-       dpi = 300, height=10, width=13)
-
-library(vegan)
-###Regular PCoA -- NAFLD
+###Figure 5A
 nafld_data_meta <- nafld_data %>% select(!c(names(virome_list))) %>% rownames_to_column("sample_id")
 
 bray <- nafld_data_species %>% vegdist(., "bray")
@@ -200,12 +188,10 @@ pcl.bray <- pcl.bray %>%
   inner_join(nafld_data_meta, by = "sample_id") %>%
   select(colnames(nafld_data_meta), everything())
 
-# save axes r2
 pco1.r2 <- paste("PCo1 (", round(pc.summary$cont$importance[2,1]*100, digits = 1), "%)", sep = '')
 pco2.r2 <- paste("PCo2 (", round(pc.summary$cont$importance[2,2]*100, digits = 1), "%)", sep = '')
 rm(pc, pc.summary)
 
-###Figure 5A
 ggplot(pcl.bray,
        aes(MDS1, MDS2)) +
   geom_point(aes(color = as.factor(case)), alpha = 0.7, size = 2, stroke = 1) +
@@ -218,15 +204,10 @@ ggplot(pcl.bray,
        fill = "") +
   labs(color = "MASLD case")
 
-ggsave(
-  file.path("output_virome_v0.3", "pco.pdf"),
-  dpi = 300, width=10, height=6
-)
-
 ###Figure 5D
 #lean nafld vs lean control
 fit_data_lean <- Maaslin2(
-  input_data = nafld_data %>% select(c(names(virome_list))), #species
+  input_data = nafld_data %>% select(c(names(virome_list))), 
   input_metadata = nafld_data %>% select(!c(names(virome_list))), #metadata
   output="output_virome_v0.3/lean",
   normalization = "none",
@@ -250,7 +231,7 @@ leanresults_sig_with_names <- merge(leanresults_sig, VGBnames_list, by.x = "feat
 
 #nonlean nafld vs nonlean control
 fit_data_nonlean <- Maaslin2(
-  input_data = nafld_data %>% select(c(names(virome_list))), #species
+  input_data = nafld_data %>% select(c(names(virome_list))),
   input_metadata = nafld_data %>% select(!c(names(virome_list))), #metadata
   output="output_virome_v0.3/nonlean",
   normalization = "none",
@@ -284,7 +265,7 @@ ggplot(lean_and_nonlean, aes(x=coef.x, y=coef.y, color=color)) +
   xlim(-0.95, 0.95) +
   ylim(-0.6, 0.6) +
   geom_point() +
-  scale_color_identity() +  # Use the colors as is
+  scale_color_identity() +  
   geom_text_repel(data = subset(lean_and_nonlean, !grepl("^Unclassified", fullname)),
                   aes(label = gsub(" ", "_", gsub("VGB_", "VGB", fullname))),
                   fontface='bold',
@@ -307,4 +288,3 @@ ggplot(lean_and_nonlean, aes(x=coef.x, y=coef.y, color=color)) +
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.line = element_line(colour = "black"))
-#14*10

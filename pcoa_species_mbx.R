@@ -1,8 +1,6 @@
-#!/usr/bin/env Rscript
 ##################################################
 #R program for creating PCoA plots
-#Extended Data Figure 1A
-#Extended Data Figure 2A
+#Extended Data Figure 1A & Extended Data Figure 2A
 ##################################################
 
 library(dplyr)
@@ -50,10 +48,10 @@ pcl.bray <- pcl.bray %>%
   inner_join(nafld_data_species_w_bactfirm_meta, by = "sample_id") %>%
   select(colnames(nafld_data_species_w_bactfirm_meta), everything())
 
-# save axes r2
 pco1.r2 <- paste("PCo1 (", round(pc.summary$cont$importance[2,1]*100, digits = 1), "%)", sep = '')
 pco2.r2 <- paste("PCo2 (", round(pc.summary$cont$importance[2,2]*100, digits = 1), "%)", sep = '')
 rm(pc, pc.summary)
+
 #Bacteroidetes
 ggplot(pcl.bray,
        aes(MDS1, MDS2)) +
@@ -66,10 +64,7 @@ ggplot(pcl.bray,
        y = pco2.r2,
        fill = "") +
   labs(color = "Relative abundance")
-ggsave(
-  file.path("output.mp4", "pco_bacteroidetes.pdf"),
-  dpi = 300, width=10, height=6
-)
+
 #Firmicutes
 ggplot(pcl.bray,
        aes(MDS1, MDS2)) +
@@ -82,13 +77,9 @@ ggplot(pcl.bray,
        y = pco2.r2,
        fill = "") +
   labs(color = "Relative abundance")
-ggsave(
-  file.path("output.mp4", "pco_firmicutes.pdf"),
-  dpi = 300, width=10, height=6
-)
 
 ###Extended Data Figure 1A
-###Regular PCoA -- NAFLD
+###Regular PCoA
 bray <- nafld_data_species %>% vegdist(., "bray")
 pc = capscale(bray~1, comm = nafld_data_species)
 pc.summary<-summary(pc)
@@ -101,8 +92,6 @@ pcl.bray <- pcl.bray %>%
   inner_join(nafld_data_meta, by = "sample_id") %>%
   select(colnames(nafld_data_meta), everything())
 
-
-# save axes r2
 pco1.r2 <- paste("PCo1 (", round(pc.summary$cont$importance[2,1]*100, digits = 1), "%)", sep = '')
 pco2.r2 <- paste("PCo2 (", round(pc.summary$cont$importance[2,2]*100, digits = 1), "%)", sep = '')
 rm(pc, pc.summary)
@@ -113,19 +102,11 @@ ggplot(pcl.bray,
   scale_color_manual(values = c("0" = "#999999", "1" = "#E69F00")) +
   coord_fixed() +
   theme_bw(base_size=24) +
-  ggtitle("NAFLD") +
   labs(x = pco1.r2,
        y = pco2.r2,
-       fill = "") +
-  labs(color = "NAFLD case")
-
-ggsave(
-  file.path("output.mp4", "pco.pdf"),
-  dpi = 300, width=10, height=6
-  )
+       fill = "") 
 
 ###Metabolites
-unfiltered_mbx_old <- read.delim("annotated_metabolites.tsv",row.names=1) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metabolomics = rowname)
 unfiltered_mbx <- read.delim("annotated_metabolites_w_methods.tsv",row.names=1) %>% select(starts_with("X")) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metabolomics = rowname)
 
 ###Normalize the mbx by methods. Divide TF by median of the ratio and pick the ones that is the most abundant among columns (hilic, c18)
@@ -203,7 +184,7 @@ nafld_data_mbx <- nafld_data %>% select(all_of(mbx_list))
 nafld_data_mbx_id <- nafld_data %>% column_to_rownames("barcode_metabolomics") %>% select(all_of(mbx_list))
 
 ###Extended Data Figure 2A
-###Regular PCoA -- NAFLD
+###Regular PCoA 
 bray <- nafld_data_mbx %>% vegdist(., "bray")
 pc = capscale(bray~1, comm = nafld_data_mbx)
 pc.summary<-summary(pc)
@@ -216,8 +197,6 @@ pcl.bray <- pcl.bray %>%
   inner_join(nafld_data_meta, by = "sample_id") %>%
   select(colnames(nafld_data_meta), everything())
 
-
-# save axes r2
 pco1.r2 <- paste("PCo1 (", round(pc.summary$cont$importance[2,1]*100, digits = 1), "%)", sep = '')
 pco2.r2 <- paste("PCo2 (", round(pc.summary$cont$importance[2,2]*100, digits = 1), "%)", sep = '')
 rm(pc, pc.summary)
@@ -228,14 +207,6 @@ ggplot(pcl.bray,
   scale_color_manual(values = c("0" = "#999999", "1" = "#E69F00")) +
   coord_fixed() +
   theme_bw(base_size=24) +
-  ggtitle("MASLD") +
   labs(x = pco1.r2,
        y = pco2.r2,
-       fill = "") +
-  labs(color = "MASLD case")
-#10*6
-
-ggsave(
-  file.path("output_mbx", "pco.pdf"),
-  dpi = 300
-)
+       fill = "") 

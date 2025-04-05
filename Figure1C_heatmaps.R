@@ -1,6 +1,5 @@
-#!/usr/bin/env Rscript
 ##################################################
-#R program for creating Figure 1B
+#R program for creating Figure 1C
 ##################################################
 
 library(dplyr)
@@ -13,6 +12,9 @@ library(ggrepel)
 library(pheatmap)
 library(RColorBrewer)
 library(viridis)
+library(gridExtra)
+library(grid)
+library(lattice)
 
 setwd("~/b2b")
 ###species###
@@ -25,7 +27,6 @@ species.data<-df_w_meta %>% select(starts_with('s__'))
 
 nafld.data<-df_w_meta %>% filter(cohort=="NAFLD")
 species.nafld.data<-nafld.data %>% select(starts_with('s__'))
-rowSums(species.nafld.data)
 
 avg.abundance.data<-as.data.frame(colMeans(species.nafld.data)) %>% rownames_to_column()
 top5<-avg.abundance.data %>% top_n(5)
@@ -33,16 +34,10 @@ top5<-top5[order(top5$`colMeans(species.nafld.data)`,decreasing=TRUE), ] #sort
 top5species<-top5$rowname
 
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>%
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>%
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
-  mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
-  mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 2, bmi17v < 25 & case==1 ~ 1, case==0 ~ 0)) #nonlean case is 2, lean case is 1
 
-nafld_case<-nafld_data%>%filter(case==1)
-nafld_control<-nafld_data%>%filter(case==0)
+nafld_case<-nafld_data %>% filter(case==1)
+nafld_control<-nafld_data %>% filter(case==0)
 species.nafld.data <- nafld_data %>% column_to_rownames("alias_id") %>% select(starts_with('s__'))
 species.nafld.data <- species.nafld.data / 100
 
@@ -92,7 +87,7 @@ clustered_species_reordered <- pheatmap(log_nafld_data_species_reordered,
                                         legend = FALSE, 
                                         color = magma_colors)
 
-#get annotation bar for nonlean, lean, control
+## Get annotation bar for nonlean, lean, control
 #selected_top5 <- species.nafld.data %>% t() %>% as.data.frame()
 #selected_top5_species <- selected_top5 %>% filter(row.names(selected_top5) %in% top5species) %>% as.matrix()
 #selected_top5_species <- selected_top5_species %>% t() %>% as.data.frame() %>% rownames_to_column()
@@ -119,9 +114,7 @@ df_w_meta <- left_join(virome_file,final_metadata,by="barcode_metagenomics")
 virome.nafld.data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% select(c(contains("VGB"),"alias_id")) %>% column_to_rownames("alias_id")
 virome.nafld.data<-virome.nafld.data[order(row.names(virome.nafld.data)), ]
 
-#looking up what samples are not in virome
 samples_not_in_virome <- species.nafld.data %>% filter(!(row.names(species.nafld.data) %in% row.names(virome.nafld.data))) %>% row.names()
-#samples that are not in virome
 samples_not_in_species <- virome.nafld.data %>% filter(!(row.names(virome.nafld.data) %in% row.names(species.nafld.data))) %>% row.names()
 
 avg.abundance.data<-as.data.frame(colMeans(virome.nafld.data)) %>% rownames_to_column()
@@ -144,7 +137,6 @@ log_nafld_data_virome <- log10(log_nafld_data_virome)
 
 #without rownames and colnames
 plot_virome<-pheatmap(log_nafld_data_virome,cluster_rows=FALSE, cluster_cols=FALSE, show_rownames = F, show_colnames = F, na_col="white",annotation_col=casebar, annotation_colors = ann_colors,legend=F)
-#7*10
 
 column_order <- clustered_species$tree_col$order
 log_nafld_data_virome_reordered <- log_nafld_data_virome[, column_order]
@@ -160,9 +152,7 @@ df_w_meta <- left_join(pathway_file,final_metadata,by="barcode_metagenomics")
 pathway.nafld.data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% select(c(contains(": "),"alias_id")) %>% column_to_rownames("alias_id")
 pathway.nafld.data<-pathway.nafld.data[order(row.names(pathway.nafld.data)), ]
 
-#looking up what samples are not in pathway
 samples_not_in_pathway <- species.nafld.data %>% filter(!(row.names(species.nafld.data) %in% row.names(pathway.nafld.data))) %>% row.names()
-#samples that are not in pathway
 samples_not_in_species <- pathway.nafld.data %>% filter(!(row.names(pathway.nafld.data) %in% row.names(species.nafld.data))) %>% row.names()
 
 avg.abundance.data<-as.data.frame(colMeans(pathway.nafld.data)) %>% rownames_to_column()
@@ -186,7 +176,6 @@ log_nafld_data_pathway <- log10(log_nafld_data_pathway)
 #without rownames and colnames
 log_nafld_data_pathway_only_five<-log_nafld_data_pathway[1:(nrow(log_nafld_data_pathway) - 2), ]
 plot_pathway<-pheatmap(log_nafld_data_pathway_only_five,cluster_rows=FALSE, cluster_cols=FALSE, show_rownames = F, show_colnames = F, na_col="white",annotation_col=casebar, annotation_colors = ann_colors,legend=F)
-#7*10
 log_nafld_data_pathway_only_five_reordered <- log_nafld_data_pathway_only_five[, column_order]
 clustered_pathway_reordered<-pheatmap(log_nafld_data_pathway_only_five_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = magma_colors)
 
@@ -205,9 +194,7 @@ df_w_meta <- left_join(mtx_pathway_unstratified,final_metadata,by="barcode_metag
 pathway.nafld.data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% select(c(contains(": "),"alias_id")) %>% column_to_rownames("alias_id")
 pathway.nafld.data<-pathway.nafld.data[order(row.names(pathway.nafld.data)), ]
 
-#looking up what samples are not in mtx
 samples_not_in_mtx <- species.nafld.data %>% filter(!(row.names(species.nafld.data) %in% row.names(pathway.nafld.data))) %>% row.names()
-#samples that are not in mtx
 samples_not_in_species <- pathway.nafld.data %>% filter(!(row.names(pathway.nafld.data) %in% row.names(species.nafld.data))) %>% row.names()
 
 avg.abundance.data<-as.data.frame(colMeans(pathway.nafld.data)) %>% rownames_to_column()
@@ -230,7 +217,6 @@ log_nafld_data_pathway_mtx <- log10(log_nafld_data_pathway_mtx)
 
 #without rownames and colnames
 plot_mtx<-pheatmap(log_nafld_data_pathway_mtx,cluster_rows=FALSE, cluster_cols=FALSE, show_rownames = F, show_colnames = F,na_col = "white",annotation_col=casebar, annotation_colors = ann_colors,legend=F)
-#5*10
 log_nafld_data_pathway_mtx_reordered <- log_nafld_data_pathway_mtx[, column_order]
 clustered_mtx_reordered<-pheatmap(log_nafld_data_pathway_mtx_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = magma_colors)
 
@@ -324,13 +310,8 @@ nafld_data_mbx_id <- nafld_data %>%
 
 mbx.nafld.data<-nafld_data_mbx_id[order(row.names(nafld_data_mbx_id)), ]
 
-#looking up what samples are not in mbx
 samples_not_in_mbx <- species.nafld.data %>% filter(!(row.names(species.nafld.data) %in% row.names(mbx.nafld.data))) %>% row.names()
-#"4220703" "4325731" "4412231" "4496028" "4568256" "4838050" "4869215" "5096894" "5268087" "5485501" "5523661" "5655628"
-#"5923618" "6165205" "6735765" "7045794" "7204109" "7296635" "7341770" "7387919" "7449135" "7942846" "825118A" "8252794"
-#"8261649" "8354542"
 samples_not_in_species <- mbx.nafld.data %>% filter(!(row.names(mbx.nafld.data) %in% row.names(species.nafld.data))) %>% row.names()
-#"4622069" "5488118" "8026418"
 
 avg.abundance.data<-as.data.frame(colMeans(mbx.nafld.data)) %>% rownames_to_column()
 top5<-avg.abundance.data %>% top_n(5)
@@ -353,13 +334,8 @@ log_nafld_data_mbx <- log2(log_nafld_data_mbx)
 
 #without rownames and colnames
 plot_mbx<-pheatmap(log_nafld_data_mbx,cluster_rows=FALSE, cluster_cols=FALSE, show_rownames = F, show_colnames = F,na_col = "white", annotation_col=casebar, annotation_colors = ann_colors,legend=F)
-#5*10
 log_nafld_data_mbx_reordered <- log_nafld_data_mbx[, column_order]
 clustered_mbx_reordered<-pheatmap(log_nafld_data_mbx_reordered, cluster_rows = FALSE, cluster_cols = F, show_rownames = F, show_colnames = F, na_col = "white", legend=F,color = magma_colors)
-
-library(gridExtra)
-library(grid)
-library(lattice)
 
 clustered_list=list()
 clustered_list[['clustered_species_reordered']]=clustered_species_reordered[[4]]
@@ -368,5 +344,5 @@ clustered_list[['clustered_virome_reordered']]=clustered_virome_reordered[[4]]
 clustered_list[['clustered_pathway_reordered']]=clustered_pathway_reordered[[4]]
 clustered_list[['clustered_mtx_reordered']]=clustered_mtx_reordered[[4]]
 grid.arrange(grobs=clustered_list,
-             ncol=1,nrow=5) #10*6.5
+             ncol=1,nrow=5) 
 dev.off()

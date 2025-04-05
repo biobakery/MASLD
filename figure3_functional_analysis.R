@@ -1,4 +1,3 @@
-#!/usr/bin/env Rscript
 ##################################################
 #R program for creating Figure 3
 ##################################################
@@ -60,12 +59,6 @@ df_w_meta_stratified <- left_join(stratified_pathway_file,final_metadata,by="bar
 ###########
 #211 nafld cases and 502 controls (193 matched and 309 unmatched controls)
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>%
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>%
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
-  mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
-  mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) #nonlean case is 1, lean case is 0
 
 ###Figure 3A
@@ -92,7 +85,7 @@ ggplot(data = sig.path.m, aes(x = variable, y = log10(value))) +
   theme(axis.text.y = element_text(size = 12),
         legend.position="bottom") +
   ylab("log10(relative abundance)") +
-  xlab("DNA")  #10*5
+  xlab("DNA")  
 
 #plot the oral ones
 bug_colors <- c(
@@ -111,27 +104,22 @@ plot_stratified_distribution <- function(name) {
   colnames(t_sum_stratified) <- sub(".*\\|", "", colnames(t_sum_stratified))
   colnames(t_sum_stratified) <- gsub(".*s__","", colnames(t_sum_stratified))
 
-  #transform to relative abundance by sum normalization and filtering
   t_sum_stratified[ is.na(t_sum_stratified) ] <- NA
-  # make numeric
   for(i in 1:ncol(t_sum_stratified))
   {
     t_sum_stratified[ ,i] <- as.numeric(as.character(t_sum_stratified[,i]))
   }
   dim(t_sum_stratified)
 
-  # sum normalize - transform to relative abundance and filtering
   t_sum_stratified_sweep <- sweep(t_sum_stratified, 1, rowSums(t_sum_stratified), `/`) #mean of that species (divide by sum of all the abundance for each sample)
   t_sum_stratified_sweep[is.na(t_sum_stratified_sweep)] <- 0
   stratified <- as.data.frame(t(t_sum_stratified_sweep))
 
-  #sort by mean relative abundance
   mns <- rowMeans(stratified, na.rm=TRUE)
   order(-mns)
   stratified <- stratified[order(-mns),]
   rowMeans(stratified)
 
-  #oral species vs non-oral -- strep vs non-strep
   oral_strep<-oralspecies_selected[grepl("Strep", oralspecies_selected$feature), ]
   oral_nonstrep<-oralspecies_selected[!grepl("Strep", oralspecies_selected$feature), ]
   strep <- as.data.frame(t(colSums(stratified[rownames(stratified) %in% c(oral_strep$feature),])))
@@ -143,20 +131,17 @@ plot_stratified_distribution <- function(name) {
   #take difference for cases and controls
   #include case status
   df_case <- pcl %>% as.data.frame %>% select("case") %>% t() %>% as.data.frame
-  stratified_case <- rbind(stratified_new, df_case)  # Combine df1 and df_case using rbind()
+  stratified_case <- rbind(stratified_new, df_case)  
 
-  # Identify the case/control status
   case_control <- stratified_case[nrow(stratified_case), ]
-  # Calculate the mean abundance for case and control
   mean_case <- rowMeans(stratified_new[, case_control == 1])
   mean_control <- rowMeans(stratified_new[, case_control == 0])
-  # Calculate the difference in mean abundance between case and control
   diff_mean <- (mean_case - mean_control)*100
   diff.abundance<-diff_mean %>% as.data.frame() %>% rename('diff'='.') %>% rownames_to_column() %>% mutate(ec = name)
 
   dna_pwy_bar<-ggplot(diff.abundance, aes(x = ec, y = diff, fill = rowname)) +
     geom_bar(stat = "identity") +
-    theme_void() +  # Use theme_void() to remove the outline box and tick marks
+    theme_void() +  
     scale_y_continuous(breaks = c(-0.5, 0, 0.5), limits = c(-2, 2)) +
     geom_hline(yintercept = 0, linetype = "dashed", size = 0.5) +
     scale_fill_manual(values = bug_colors) +
@@ -174,7 +159,7 @@ plot2<-plot_stratified_distribution("PWY-7977: L-methionine biosynthesis IV")
 plot1<-plot_stratified_distribution("PWY-702: L-methionine biosynthesis II")
 
 grid.arrange(plot1,plot2,plot3,plot4,plot5,plot6,plot7,
-             ncol=1,nrow=7) #10*6.5
+             ncol=1,nrow=7)
 
 ###Figure 3B
 ###### Nonlean vs lean case for MGX (DNA)
@@ -188,7 +173,7 @@ nafld_data_new$lean_vs_nonlean_case<-as.factor(nafld_data_new$lean_vs_nonlean_ca
 nafld_data_new <- nafld_data_new %>% filter(!is.na(lean_vs_nonlean_case))
 
 fit_data <- Maaslin2(
-  input_data = nafld_data_new %>% select(pathway_list$rowname), #nafld_data_pathway,
+  input_data = nafld_data_new %>% select(pathway_list$rowname), 
   input_metadata =nafld_data_new %>% select(!pathway_list$rowname), #metadata
   output="output_pathway_notfiltered_nonleanlean",
   normalization = "TSS",
@@ -220,7 +205,6 @@ sig_pathways <- c("COLANSYN-PWY: colanic acid building blocks biosynthesis",
                   "PWY0-1479: tRNA processing",
                   "PWY-6895: superpathway of thiamine diphosphate biosynthesis II",
                   "PWY-6749: CMP-legionaminate biosynthesis I")
-#for nafld_data_new, 1 is nonlean case and 0 is lean case
 nafld_data_path_w_case <- nafld_data_new %>% select(all_of(sig_pathways) | lean_vs_nonlean_case | alias_id)
 sig.path.m <- melt(nafld_data_path_w_case, id = c("alias_id","lean_vs_nonlean_case"))
 
@@ -239,7 +223,7 @@ ggplot(data = sig.path.m, aes(x = variable, y = log10(value))) +
   theme(axis.text.y = element_text(size = 12),
         legend.position="bottom") +
   ylab("log10(relative abundance)") +
-  xlab("DNA")  #10*5
+  xlab("DNA")  
 
 #plot the oral ones
 bug_colors <- c(
@@ -277,7 +261,6 @@ plot_stratified_distribution <- function(name) {
   stratified <- stratified[order(-mns),]
   rowMeans(stratified)
 
-  #oral species vs non-oral -- strep vs non-strep
   oral_strep<-oralspecies_selected[grepl("Strep", oralspecies_selected$feature), ]
   oral_nonstrep<-oralspecies_selected[!grepl("Strep", oralspecies_selected$feature), ]
   strep <- as.data.frame(t(colSums(stratified[rownames(stratified) %in% c(oral_strep$feature),])))
@@ -291,18 +274,15 @@ plot_stratified_distribution <- function(name) {
   df_case <- pcl %>% as.data.frame %>% select("lean_vs_nonlean_case") %>% t() %>% as.data.frame
   stratified_case <- rbind(stratified_new, df_case)  # Combine df1 and df_case using rbind()
 
-  # Identify the case/control status
   case_control <- stratified_case[nrow(stratified_case), ]
-  # Calculate the mean abundance for case and control
   mean_case <- rowMeans(stratified_new[, case_control == 1])
   mean_control <- rowMeans(stratified_new[, case_control == 0])
-  # Calculate the difference in mean abundance between case and control
   diff_mean <- (mean_case - mean_control)*100
   diff.abundance<-diff_mean %>% as.data.frame() %>% rename('diff'='.') %>% rownames_to_column() %>% mutate(ec = name)
 
   dna_pwy_bar<-ggplot(diff.abundance, aes(x = ec, y = diff, fill = rowname)) +
     geom_bar(stat = "identity") +
-    theme_void() +  # Use theme_void() to remove the outline box and tick marks
+    theme_void() +  
     scale_y_continuous(breaks = c(-0.5, 0, 0.5), limits = c(-2, 2)) +
     geom_hline(yintercept = 0, linetype = "dashed", size = 0.5) +
     scale_fill_manual(values = bug_colors) +
@@ -328,7 +308,7 @@ plot1<-plot_stratified_distribution("PWY-6749: CMP-legionaminate biosynthesis I"
 
 grid.arrange(plot1,plot2,plot3,plot4,plot5,plot6,plot7,
              plot8,plot9,plot10,plot11,plot12,plot13,plot14,
-             ncol=1,nrow=14) #10*6.5
+             ncol=1,nrow=14) 
 
 ###Figure 3A MTX
 ############
@@ -375,12 +355,6 @@ oralspecies_selected<-oralspecies %>% filter(major_site=="oral")
 ###########
 #211 nafld cases and 502 controls (193 matched and 309 unmatched controls)
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>%
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>%
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
-  mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
-  mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) #nonlean case is 1, lean case is 0
 
 #boxplot
@@ -405,7 +379,7 @@ ggplot(data = sig.path.m, aes(x = variable, y = log10(value))) +
   theme(axis.text.y = element_text(size = 12),
         legend.position="bottom") +
   ylab("log10(relative abundance)") +
-  xlab("RNA")  #10*5
+  xlab("RNA")  
 
 ###Figure 3B MTX
 ###### Nonlean vs lean case for MTX (RNA)
@@ -441,7 +415,6 @@ for (pathway in sig_pathways) {
   }
 }
 
-#for nafld_data_new, 1 is nonlean case and 0 is lean case
 nafld_data_path_w_case <- nafld_data_new %>%
   select(all_of(sig_pathways), lean_vs_nonlean_case, alias_id)
 
@@ -462,4 +435,4 @@ ggplot(data = sig.path.m, aes(x = variable, y = log10(value))) +
   theme(axis.text.y = element_text(size = 12),
         legend.position="bottom") +
   ylab("log10(relative abundance)") +
-  xlab("RNA")  #10*5
+  xlab("RNA")  

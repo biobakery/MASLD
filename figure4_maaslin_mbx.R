@@ -11,8 +11,6 @@ library(ggplot2)
 library(ggrepel)
 
 setwd("~/b2b")
-unfiltered_mbx_old <- read.delim("annotated_metabolites.tsv",row.names=1) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metabolomics = rowname) 
-#this mbx file includes information on TF and QI, but first need to remove columns that do not start with X
 unfiltered_mbx <- read.delim("annotated_metabolites_w_methods.tsv",row.names=1) %>% select(starts_with("X")) %>% t() %>% as.data.frame() %>% rownames_to_column() %>% rename(barcode_metabolomics = rowname) 
 
 ###Normalize the mbx by methods. Divide TF by median of the ratio and pick the ones that is the most abundant among columns (hilic, c18)
@@ -88,12 +86,6 @@ mbx.nafld.data<-nafld.data %>% select(all_of(mbx_list))
 ###########
 #209 NAFLD cases
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>% 
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>% 
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
-  mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
-  mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) #nonlean case is 1, lean case is 0
 
 #alias id key
@@ -111,7 +103,7 @@ fit_data <- Maaslin2(
   input_data = nafld_data_mbx, #mbx
   input_metadata =nafld_data %>% select(!all_of(mbx_list)), #metadata
   output="output_mbx/nonlog",
-  normalization = "NONE", #the data is already median normalized data. 
+  normalization = "NONE", #the data is already median normalized data 
   transform = "LOG",
   analysis_method = "LM",
   max_significance = 0.20, # q-value threshold for significance. default is 0.25
@@ -178,70 +170,73 @@ ggplot(results.nafld, aes(x = coef,
                    show.legend = FALSE, 
                    size = 4,
                    min.segment.length = 0.2,
-                   #box.padding = 0.01,
-                   #point.padding = 0.4,
-                   #fontface="bold",
                    color = "black") 
 
-ggsave(filename = file.path("output_mbx/nonlog", "volcano.pdf"), 
-       dpi = 300, height=5, width=7)
-
-#boxplot
-require(reshape2)
-require(graphics)
-nafld_data_mbx_w_case <- nafld_data %>% select(all_of(mbx_list) | case | alias_id) 
-df <-read.table(file = 'output_mbx/nonlog/significant_results.tsv', sep = '\t', header = TRUE) %>% filter(metadata=="case") %>% select(feature)
-sig.mbx.m <- melt(nafld_data_mbx_w_case, id = c("alias_id","case"))
-sig.mbx.m$variable <- gsub("^(\\(|\\d)", "X\\1", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub("-", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub(":", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub("\\(", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub("\\)", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub("\\[", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub("\\]", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub(" ", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub("'", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub("/", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub(";", ".", sig.mbx.m$variable)
-sig.mbx.m$variable = gsub(",", ".", sig.mbx.m$variable)
-sig.mbx.m.f<- sig.mbx.m %>% filter(variable %in% df$feature)
-mbxcategory <-read.table(file = 'input/name_class.tsv', sep = '\t', header = TRUE) %>% mutate(variable=Metablite)
-mbxcategory$variable <- gsub("^(\\(|\\d)", "X\\1", mbxcategory$variable)
-mbxcategory$variable = gsub("-", ".", mbxcategory$variable)
-mbxcategory$variable = gsub(":", ".", mbxcategory$variable)
-mbxcategory$variable = gsub("\\(", ".", mbxcategory$variable)
-mbxcategory$variable = gsub("\\)", ".", mbxcategory$variable)
-mbxcategory$variable = gsub("\\[", ".", mbxcategory$variable)
-mbxcategory$variable = gsub("\\]", ".", mbxcategory$variable)
-mbxcategory$variable = gsub(" ", ".", mbxcategory$variable)
-mbxcategory$variable = gsub("'", ".", mbxcategory$variable)
-mbxcategory$variable = gsub("/", ".", mbxcategory$variable)
-mbxcategory$variable = gsub(";", ".", mbxcategory$variable)
-mbxcategory$variable = gsub(",", ".", mbxcategory$variable)
-mbxcategory<-mbxcategory%>% select(variable, Class) %>% filter(variable %in% df$feature)
-mbxcategory <- unique(mbxcategory)
-sig.mbx.m.f_withcat<-left_join(sig.mbx.m.f,mbxcategory,by="variable") 
-
-#only keep several classes
-boxplot_mbx_data<-sig.mbx.m.f_withcat %>% filter(Class==c("Steroids and steroid derivatives",
-                                                         "Organonitrogen compounds",
-                                                         "Fatty Acyls",
-                                                         "Prenol lipids"))
 ###Figure 4B
-ggplot(data = boxplot_mbx_data, aes(x = variable, y = log10(value))) +
-  geom_boxplot(aes(fill = as.factor(case)), outlier.size = 0.3) +
-  coord_flip() +
-  scale_fill_manual(name = "MASLD", values = c("#999999", "#E69F00"),
-                    labels = c("control", "case")) +
-  theme_bw() +
-  theme(axis.text.y = element_text(size = 9),
-        legend.position = "bottom",
-        strip.text.y = element_text(angle = 0)) + # Make class names horizontal
-  ylab("log10(relative abundance)") +
-  xlab("Metabolites") +
-  facet_grid(Class ~ ., scales = "free", space = "free") +
-  theme(panel.spacing = unit(1, "lines"))
+#CAR
+car_metabolites_data <- nafld_data %>%
+  select(matches("^CAR \\d+:\\d+"), case, lean_vs_nonlean_case) %>%
+  mutate(across(matches("^CAR \\d+:\\d+"), ~ {
+    col_min_half <- min(.[. > 0], na.rm = TRUE) / 2
+    .[. == 0] <- col_min_half
+    log2(.)
+  }))
 
-ggsave(filename = file.path("output_mbx/nonlog/boxplots.pdf"), 
-       dpi = 300,height=11,width=7)
+boxplot_data_long_cars <- car_metabolites_data %>%
+  pivot_longer(
+    cols = matches("^CAR \\d+:\\d+"),  
+    names_to = "Metabolite",
+    values_to = "Abundance"
+  )
+
+boxplot_data_long_cars <- boxplot_data_long_cars %>%
+  mutate(
+    Chain_Length = as.numeric(gsub("CAR (\\d+):.*", "\\1", Metabolite))  
+  ) %>%
+  arrange(Chain_Length) %>%  # Arrange by chain length
+  mutate(
+    Metabolite = factor(Metabolite, levels = unique(Metabolite))  
+  )
+
+wilcoxon_results <- boxplot_data_long_cars %>%
+  group_by(Metabolite) %>%
+  summarize(
+    p_value = wilcox.test(
+      Abundance[case == 0], 
+      Abundance[case == 1]
+    )$p.value
+  )
+
+wilcoxon_results <- wilcoxon_results %>%
+  mutate(
+    q_value = p.adjust(p_value, method = "BH"),  # Benjamini-Hochberg FDR correction
+    significance = case_when(
+      q_value < 0.001 ~ "**",
+      q_value < 0.01 ~ "*",
+      TRUE ~ " "  # Not significant
+    )
+  )
+
+boxplot_data_long_cars <- boxplot_data_long_cars %>%
+  left_join(wilcoxon_results, by = "Metabolite")
+
+ggplot(boxplot_data_long_cars, aes(x = Metabolite, y = Abundance)) +
+  geom_boxplot(aes(fill = factor(case)), alpha = 0.6) +
+  scale_fill_manual(name = "MASLD", values = c("#999999", "#E69F00"),
+                    labels = c("Control", "MASLD")) +
+  labs(x = "Metabolite", y = "log2(abundance)") +
+  geom_text(
+    data = wilcoxon_results,
+    aes(x = Metabolite, y = max(boxplot_data_long_cars$Abundance, na.rm = TRUE), label = significance),
+    inherit.aes = FALSE,
+    size = 5,
+    vjust = -0.5,
+    fontface = "bold"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y = element_text(size = 10)
+  )
 

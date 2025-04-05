@@ -1,4 +1,3 @@
-#!/usr/bin/env Rscript
 ##################################################
 #R program for creating Table 1
 ##################################################
@@ -41,7 +40,7 @@ table1 <- meta_data %>%
   select(
     alias_id,
     Age = age,
-    NAFLD = case,
+    MASLD = case,
     Hypertension = hbp17, #high_blood_pressure
     Hypercholesterolemia = chol17, #high_cholesterol
     `Diabetes Mellitus` =  db17,
@@ -68,16 +67,16 @@ t1 <- CreateTableOne(
     "Aspirin Use",
     "AHEI",
     "Total Calories",
-    "NAFLD",
+    "MASLD",
     "Western Diet"),
-  strata = c("NAFLD"),
+  strata = c("MASLD"),
   factorVars = c(
     "Hypertension",
     "Hypercholesterolemia",
     "Diabetes Mellitus",
     "Postmenopausal Hormone Use",
     "Aspirin Use",
-    "NAFLD")
+    "MASLD")
 )
 
 table1.subject <- print(
@@ -96,12 +95,12 @@ write.csv(table1.subject,
 
 rm(table1.subject)
 
-#sensitivity (only including NAFLD matched controls)
+#sensitivity (only including MASLD-matched controls)
 table1_sens <- meta_data_sens %>%
   select(
     alias_id,
     Age = age,
-    NAFLD = case,
+    MASLD = case,
     Hypertension = hbp17,
     Hypercholesterolemia = chol17,
     `Diabetes Mellitus` =  db17,
@@ -128,16 +127,16 @@ t1_sens <- CreateTableOne(
     "Aspirin Use",
     "AHEI",
     "Total Calories",
-    "NAFLD",
+    "MASLD",
     "Western Diet"),
-  strata = c("NAFLD"),
+  strata = c("MASLD"),
   factorVars = c(
     "Hypertension",
     "Hypercholesterolemia",
     "Diabetes Mellitus",
     "Postmenopausal Hormone Use",
     "Aspirin Use",
-    "NAFLD")
+    "MASLD")
 )
 
 table1.subject_sens <- print(
@@ -153,6 +152,5 @@ table1.subject_sens
 
 write.csv(table1.subject_sens,
           file = file.path("output", "table1_sensitivity.csv"))
-
 
 rm(table1.subject_sens)

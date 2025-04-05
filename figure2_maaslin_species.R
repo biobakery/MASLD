@@ -1,4 +1,3 @@
-#!/usr/bin/env Rscript
 ##################################################
 #R program for creating Figure 2
 ##################################################
@@ -56,7 +55,7 @@ species.data<-df_w_meta %>% select(matches("SGB|EUK"))
 nafld.data<-df_w_meta %>% filter(cohort=="NAFLD")
 species.nafld.data<-nafld.data %>% select(matches("SGB|EUK"))
 
-oralspecies <- read_csv('/n/home03/hkim104/oralvsgut/oral_vs_gut.csv')
+oralspecies <- read_csv('oral_vs_gut.csv')
 
 #alias id key
 alias_key<-final_metadata %>% select(alias_id, barcode_metagenomics)
@@ -66,22 +65,12 @@ alias_key<-final_metadata %>% select(alias_id, barcode_metagenomics)
 ###########
 #211 nafld cases and 502 controls (193 matched and 309 unmatched controls)
 nafld_data<-df_w_meta %>% filter(cohort=="NAFLD" | case==0) %>%
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>%
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
   mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
   mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) #nonlean case is 1, lean case is 0
 
 #check medication
 nafld_data_check<-check_medication %>% filter(cohort=="NAFLD" | case==0) %>%
-  mutate(obesity = case_when(bmi17v >= 30 ~ 1, bmi17v <30 ~ 0)) %>%
-  mutate(lean = case_when(bmi17v < 25 ~ 1, bmi17v >= 25 ~ 0)) %>%
-  mutate(lean_nafld_binary = ifelse(bmi17v < 25 & case==1, 1, 0)) %>%
-  mutate(nonlean_nafld_binary = ifelse(bmi17v >= 25 & case==1, 1, 0)) %>%
-  mutate(lean_nafld_lean_control = case_when(bmi17v < 25 & case==1 ~ 1, bmi17v < 25 & case==0 ~ 0)) %>%
-  mutate(nonlean_nafld_nonlean_control = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v >= 25 & case==0 ~ 0)) %>%
   mutate(lean_vs_nonlean_case = case_when(bmi17v >= 25 & case==1 ~ 1, bmi17v < 25 & case==1 ~ 0)) #nonlean case is 1, lean case is 0
 ###let us get the lean nafld cases that do not fit into the cardiometabolic diagnosis criteria
 lean_nafld <- nafld_data_check %>%
@@ -94,9 +83,8 @@ lean_nafld_without_cardio <- lean_nafld %>%
   filter(rowSums(select(., hbp17, chol17, db17)) == 0)
 lean_nafld_without_cardio_no_medication <- lean_nafld_without_cardio %>% filter(rowSums(select(., contains("medication")) == 1, na.rm = TRUE) == 0)
 lean_nafld_without_cardio_samples<-rownames(lean_nafld_without_cardio_no_medication)
-#we have 11 cases that did not meet the cardiometabolic criteria
 
-nafld_data_species <- nafld_data %>% select(matches("SGB|EUK")) #note that making column to rownames isn't a necessary step in Maaslin
+nafld_data_species <- nafld_data %>% select(matches("SGB|EUK")) 
 
 # assign 1/2 of minimum to 0 so we can log transform
 df.min <- (min(nafld_data_species[nafld_data_species > 0])/2)
@@ -110,7 +98,7 @@ fit_data <- Maaslin2(
   input_data = nafld_data %>% select(matches("SGB|EUK")), #species
   input_metadata = nafld_data %>% select(!matches("SGB|EUK")), #metadata
   output="output.mp4",
-  normalization = "TSS", #our data already normalized.
+  normalization = "TSS", #our data already normalized
   transform = "LOG",
   analysis_method = "LM",
   max_significance = 0.20, # q-value threshold for significance. default is 0.25
@@ -176,13 +164,8 @@ ggplot(results.nafld, aes(x = coef,
                    show.legend = FALSE,
                    size = 5.5,
                    min.segment.length = 0.2,
-                   #box.padding = 0.01,
-                   #point.padding = 0.4,
                    color = "black",
                    fontface='bold')
-
-ggsave(filename = file.path("output.mp4", "volcano.pdf"),
-       dpi = 300, height=9, width=12)
 
 #oral species
 sigresults <- read_tsv('output.mp4/significant_results.tsv') %>% filter(metadata=="case")
@@ -206,15 +189,12 @@ oral<-ggplot(data = sumabund_and_case,
   geom_jitter(shape = 16, position = position_jitter(0.1)) +
   theme_classic(base_size = 18) +
   theme(legend.position = "none") +
-  xlab("NAFLD") +
   ylab("log10(abundance)") +
   geom_signif(comparisons = list(c("0", "1")),
               test=wilcox.test,
               tip_length = 0,
               map_signif_level = TRUE) +
   ggtitle("Oral SGBs")
-ggsave(filename = file.path("output.mp4", "oralbug_boxplot.pdf"),
-       dpi = 300, width=4.5, height=6)
 
 ###Figure 2C
 #genus boxplots using metaphlan taxonomic profiles
@@ -231,12 +211,11 @@ strep<-ggplot(data = nafld_data_species_w_strepveilloactino,
   geom_jitter(shape = 16, position = position_jitter(0.1)) +
   theme_classic(base_size = 18) +
   theme(legend.position = "none") +
-  xlab("Lean vs Non-lean NAFLD") +
   ylab("log10(abundance)") +
   geom_signif(comparisons = list(c("0", "1")),
               tip_length = 0,
               map_signif_level = TRUE) +
-  ggtitle("Genus Streptococcus")
+  ggtitle("Streptococcus spp.")
 
 ###Figure 2D
 #lean nafld vs lean control MaAsLin
@@ -290,35 +269,33 @@ oral_lean_and_nonlean<-lean_and_nonlean %>% filter(feature %in% oralspecies_sele
 model<-lm(coef.y~coef.x,data=oral_lean_and_nonlean)
 #with v=0 and h=0 lines
 ggplot(oral_lean_and_nonlean, aes(x=coef.x, y=coef.y)) +
-  xlab("Beta coefficient for lean nafld vs controls")+
-  ylab("Beta coefficient for nonlean nafld vs controls") +
+  xlab("Beta coefficient for lean MASLD vs controls")+
+  ylab("Beta coefficient for nonlean MASLD vs controls") +
   xlim(-0.5,0.75) +
   ylim(-0.2,0.65) +
   geom_point()+
   geom_text_repel(aes(label=feature),fontface='bold',size=4)+
   geom_vline(xintercept=0,linetype = "dashed")+
   geom_hline(yintercept=0,linetype="dashed")+
-  geom_label(aes(x = -0.35, y = 0.65, label = "Nonlean NAFLD increased\nLean NAFLD decreased"),
+  geom_label(aes(x = -0.35, y = 0.65, label = "Nonlean MASLD increased\nLean MASLD decreased"),
                label.padding = unit(4, "mm"),  fill = "lightgrey", color="black",fontface='bold')+
-  geom_label(aes(x = -0.35, y = -0.2, label = "Nonlean NAFLD decreased\nLean NAFLD decreased"),
+  geom_label(aes(x = -0.35, y = -0.2, label = "Nonlean MASLD decreased\nLean MASLD decreased"),
              label.padding = unit(4, "mm"),  fill = "lightgrey", color="black",fontface='bold')+
-  geom_label(aes(x = 0.6, y = 0.65, label = "Nonlean NAFLD increased\nLean NAFLD increased"),
+  geom_label(aes(x = 0.6, y = 0.65, label = "Nonlean MASLD increased\nLean MASLD increased"),
              label.padding = unit(4, "mm"),  fill = "lightgrey", color="black",fontface='bold')+
-  geom_label(aes(x = 0.6, y = -0.2, label = "Nonlean NAFLD decreased\nLean NAFLD increased"),
+  geom_label(aes(x = 0.6, y = -0.2, label = "Nonlean MASLD decreased\nLean MASLD increased"),
              label.padding = unit(4, "mm"),  fill = "lightgrey", color="black",fontface='bold')+
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-ggsave(filename = file.path("output.mp4", "oralbug_nonleanandlean_scatter.pdf"),
-       dpi = 300, height=8, width=11)
 
-###Supp table 10
+###Supp table 13
 #MaAsLin without the cases that did not meet the new MASLD diagnosis criteria
 nafld_data_sens <- nafld_data[!rownames(nafld_data) %in% lean_nafld_without_cardio_samples, ]
 fit_data <- Maaslin2(
   input_data = nafld_data_sens %>% select(matches("SGB|EUK")), #species
   input_metadata = nafld_data_sens %>% select(!matches("SGB|EUK")), #metadata
   output="output.mp4.without.diagnosis",
-  normalization = "TSS", #our data already normalized.
+  normalization = "TSS", #our data already normalized
   transform = "LOG",
   analysis_method = "LM",
   max_significance = 0.20, # q-value threshold for significance. default is 0.25
