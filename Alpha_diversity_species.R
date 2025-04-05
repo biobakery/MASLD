@@ -49,8 +49,6 @@ ggplot(data = alpha3,
               tip_length = 0,
               map_signif_level = TRUE) 
 
-rm(alpha, alpha2, alpha3)
-
 ###Extended Data Figure 1C
 # nonlean case vs lean case vs control
 ggplot(data = alpha3, aes(x = as.factor(lean_nonlean_control), y = shannon, fill = as.factor(lean_nonlean_control))) +
