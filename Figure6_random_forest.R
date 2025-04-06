@@ -409,126 +409,126 @@ new.meta.siam <- nafld_data %>%
 meta.siam_label <- create.label(meta = new.meta.siam, label = 'lean_vs_nonlean_case', case = '1')
 
 # create a siamcat object
-siam.all <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
-siam.all.mbx <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
+siam.all_nonleanlean <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
+siam.all.mbx_nonleanlean <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
 
-show(siam.all)
+show(siam.all_nonleanlean)
 
 # feature selection
-siam.all <- filter.features(siam.all, filter.method='abundance', cutoff=0.001)
-siam.all.mbx <- filter.features(siam.all.mbx, filter.method='abundance', cutoff=0.001)
+siam.all_nonleanlean <- filter.features(siam.all_nonleanlean, filter.method='abundance', cutoff=0.001)
+siam.all.mbx_nonleanlean <- filter.features(siam.all.mbx_nonleanlean, filter.method='abundance', cutoff=0.001)
 
 # data normalizing
-siam.all <- normalize.features(siam.all, norm.method = 'log.std',
+siam.all_nonleanlean <- normalize.features(siam.all_nonleanlean, norm.method = 'log.std',
                                norm.param = list(log.n0=1e-06, sd.min.q=0))
-siam.all.mbx <- normalize.features(siam.all.mbx, norm.method = 'log.std',
+siam.all.mbx_nonleanlean <- normalize.features(siam.all.mbx_nonleanlean, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 # prepare cross-validation
 set.seed(1123)
-siam.all <-  create.data.split(
-  siam.all,
+siam.all_nonleanlean <-  create.data.split(
+  siam.all_nonleanlean,
   num.folds = 5,
   num.resample = 2
 )
 set.seed(1123)
-siam.all.mbx <-  create.data.split(
-  siam.all.mbx,
+siam.all.mbx_nonleanlean <-  create.data.split(
+  siam.all.mbx_nonleanlean,
   num.folds = 5,
   num.resample = 2
 )
 set.seed(1123)
-siam.all <- train.model(
-  siam.all,
+siam.all_nonleanlean <- train.model(
+  siam.all_nonleanlean,
   method = "randomForest"
 )
 set.seed(1123)
-siam.all.mbx <- train.model(
-  siam.all.mbx,
+siam.all.mbx_nonleanlean <- train.model(
+  siam.all.mbx_nonleanlean,
   method = "randomForest"
 )
 
-model_type(siam.all)
+model_type(siam.all_nonleanlean)
 
 # access the models
-models <- models(siam.all)
+models <- models(siam.all_nonleanlean)
 models[[1]]
 
 # make predictions using the data-split and the models trained in previous step
-siam.all <- make.predictions(siam.all)
-siam.all.mbx <- make.predictions(siam.all.mbx)
-siam.predict <- pred_matrix(siam.all)
+siam.all_nonleanlean <- make.predictions(siam.all_nonleanlean)
+siam.all.mbx_nonleanlean <- make.predictions(siam.all.mbx_nonleanlean)
+siam.predict_nonleanlean <- pred_matrix(siam.all_nonleanlean)
 
 # model evaluation and interpretation
-siam.all <-  evaluate.predictions(siam.all)
-siam.all.mbx <-  evaluate.predictions(siam.all.mbx)
+siam.all_nonleanlean <-  evaluate.predictions(siam.all_nonleanlean)
+siam.all.mbx_nonleanlean <-  evaluate.predictions(siam.all.mbx_nonleanlean)
 
 ### mtx pathway
 mtx.s.siam<-t(nafld_data_mtx_pathway)
 
 # create a siamcat object
-siam.all.mtx <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
+siam.all.mtx_nonleanlean <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
-siam.all.mtx <- filter.features(siam.all.mtx, filter.method='abundance', cutoff=0.001)
+siam.all.mtx_nonleanlean <- filter.features(siam.all.mtx_nonleanlean, filter.method='abundance', cutoff=0.001)
 
 # data normalizing
-siam.all.mtx <- normalize.features(siam.all.mtx, norm.method = 'log.std',
+siam.all.mtx_nonleanlean <- normalize.features(siam.all.mtx_nonleanlean, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 
 # prepare cross-validation
 set.seed(1123)
-siam.all.mtx <-  create.data.split(
-  siam.all.mtx,
+siam.all.mtx_nonleanlean <-  create.data.split(
+  siam.all.mtx_nonleanlean,
   num.folds = 5,
   num.resample = 2
 )
 
 # model training, default setting
 set.seed(1123)
-siam.all.mtx <- train.model(
-  siam.all.mtx,
+siam.all.mtx_nonleanlean <- train.model(
+  siam.all.mtx_nonleanlean,
   method = "randomForest"
 )
 
 # make predictions using the data-split and the models trained in previous step
-siam.all.mtx <- make.predictions(siam.all.mtx)
+siam.all.mtx_nonleanlean <- make.predictions(siam.all.mtx_nonleanlean)
 
 # model evaluation and interpretation
-siam.all.mtx <-  evaluate.predictions(siam.all.mtx)
+siam.all.mtx_nonleanlean <-  evaluate.predictions(siam.all.mtx_nonleanlean)
 
 ### Virome
 vir.s.siam<-t(nafld_data_virome)
 
 # create a siamcat object
-siam.all.vir <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
+siam.all.vir_nonleanlean <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
-siam.all.vir <- filter.features(siam.all.vir, filter.method='abundance', cutoff=0.001)
+siam.all.vir_nonleanlean <- filter.features(siam.all.vir_nonleanlean, filter.method='abundance', cutoff=0.001)
 
 # data normalizing
-siam.all.vir <- normalize.features(siam.all.vir, norm.method = 'log.std',
+siam.all.vir_nonleanlean <- normalize.features(siam.all.vir_nonleanlean, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 
 # prepare cross-validation
 set.seed(1123)
-siam.all.vir <-  create.data.split(
-  siam.all.vir,
+siam.all.vir_nonleanlean <-  create.data.split(
+  siam.all.vir_nonleanlean,
   num.folds = 5,
   num.resample = 2
 )
 
 # model training, default setting
 set.seed(1123)
-siam.all.vir <- train.model(
-  siam.all.vir,
+siam.all.vir_nonleanlean <- train.model(
+  siam.all.vir_nonleanlean,
   method = "randomForest"
 )
 
 # make predictions using the data-split and the models trained in previous step
-siam.all.vir <- make.predictions(siam.all.vir)
+siam.all.vir_nonleanlean <- make.predictions(siam.all.vir_nonleanlean)
 
 # model evaluation and interpretation
-siam.all.vir <-  evaluate.predictions(siam.all.vir)
+siam.all.vir_nonleanlean <-  evaluate.predictions(siam.all.vir_nonleanlean)
 
 
 ########################################################
@@ -547,24 +547,24 @@ vir.s.siam_common <- vir.s.siam[, common_samples]
 all_features <- rbind(bugs.s.siam_common, mtx.s.siam_common, norm.mbx.s.siam_common, vir.s.siam_common)
 
 # create a siamcat object
-siam.all.vl <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
+siam.all.vl_nonleanlean <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
 
 # feature selection
-siam.all.vl <- filter.features(siam.all.vl, filter.method='abundance', cutoff=0.001)
+siam.all.vl_nonleanlean <- filter.features(siam.all.vl_nonleanlean, filter.method='abundance', cutoff=0.001)
 
 # data normalizing
-siam.all.vl <- normalize.features(siam.all.vl, norm.method = 'log.std',
+siam.all.vl_nonleanlean <- normalize.features(siam.all.vl_nonleanlean, norm.method = 'log.std',
                                   norm.param = list(log.n0=1e-06, sd.min.q=0))
 
 set.seed(1123)
 # prepare cross-validation
-siam.all.vl <-  create.data.split(
-  siam.all.vl,
+siam.all.vl_nonleanlean <-  create.data.split(
+  siam.all.vl_nonleanlean,
   num.folds = 5,
   num.resample = 2
 )
 
-siam.all.vl <- add.meta.pred(siam.all.vl,
+siam.all.vl_nonleanlean <- add.meta.pred(siam.all.vl_nonleanlean,
                              pred.names=c('age',
                                           'db17',
                                           #'bmi17v',
@@ -573,22 +573,22 @@ siam.all.vl <- add.meta.pred(siam.all.vl,
 
 # model training, default setting
 set.seed(1123)
-siam.all.vl <- train.model(
-  siam.all.vl,
+siam.all.vl_nonleanlean <- train.model(
+  siam.all.vl_nonleanlean,
   method = "randomForest"
 )
 
 # make predictions using the data-split and the models trained in previous step
-siam.all.vl <- make.predictions(siam.all.vl)
+siam.all.vl_nonleanlean <- make.predictions(siam.all.vl_nonleanlean)
 
 # model evaluation and interpretation
-siam.all.vl <-  evaluate.predictions(siam.all.vl)
+siam.all.vl_nonleanlean <-  evaluate.predictions(siam.all.vl_nonleanlean)
 
 # evaluation plot for non-lean case vs. lean case
-model.evaluation.plot('Taxa' = siam.all,
-                      'MBX' = siam.all.mbx,
-                      'MTX pathways' = siam.all.mtx,
-                      'Virome' = siam.all.vir,
+model.evaluation.plot('Taxa' = siam.all_nonleanlean,
+                      'MBX' = siam.all.mbx_nonleanlean,
+                      'MTX pathways' = siam.all.mtx_nonleanlean,
+                      'Virome' = siam.all.vir_nonleanlean,
                       fn.plot = './eval_plot.full.nonleancase_leancase_RF.pdf')
 
 
@@ -603,99 +603,99 @@ new.meta.siam <- nafld_data %>%
   column_to_rownames('alias_id')
 meta.siam_label <- create.label(meta = new.meta.siam, label = 'nonlean_vs_control', case = '1')
 
-siam.all <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
-siam.all.mbx <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
+siam.all_nonleancontrol <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
+siam.all.mbx_nonleancontrol <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
 
-show(siam.all)
+show(siam.all_nonleancontrol)
 
-siam.all <- filter.features(siam.all, filter.method='abundance', cutoff=0.001)
-siam.all.mbx <- filter.features(siam.all.mbx, filter.method='abundance', cutoff=0.001)
+siam.all_nonleancontrol <- filter.features(siam.all_nonleancontrol, filter.method='abundance', cutoff=0.001)
+siam.all.mbx_nonleancontrol <- filter.features(siam.all.mbx_nonleancontrol, filter.method='abundance', cutoff=0.001)
 
-siam.all <- normalize.features(siam.all, norm.method = 'log.std',
+siam.all_nonleancontrol <- normalize.features(siam.all_nonleancontrol, norm.method = 'log.std',
                                norm.param = list(log.n0=1e-06, sd.min.q=0))
-siam.all.mbx <- normalize.features(siam.all.mbx, norm.method = 'log.std',
+siam.all.mbx_nonleancontrol <- normalize.features(siam.all.mbx_nonleancontrol, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 set.seed(1123)
-siam.all <-  create.data.split(
-  siam.all,
+siam.all_nonleancontrol <-  create.data.split(
+  siam.all_nonleancontrol,
   num.folds = 5,
   num.resample = 2
 )
 set.seed(1123)
-siam.all.mbx <-  create.data.split(
-  siam.all.mbx,
+siam.all.mbx_nonleancontrol <-  create.data.split(
+  siam.all.mbx_nonleancontrol,
   num.folds = 5,
   num.resample = 2
 )
 set.seed(1123)
-siam.all <- train.model(
-  siam.all,
+siam.all_nonleancontrol <- train.model(
+  siam.all_nonleancontrol,
   method = "randomForest"
 )
 set.seed(1123)
-siam.all.mbx <- train.model(
-  siam.all.mbx,
+siam.all.mbx_nonleancontrol <- train.model(
+  siam.all.mbx_nonleancontrol,
   method = "randomForest"
 )
 
-model_type(siam.all)
+model_type(siam.all_nonleancontrol)
 
-models <- models(siam.all)
+models <- models(siam.all_nonleancontrol)
 models[[1]]
 
-siam.all <- make.predictions(siam.all)
-siam.all.mbx <- make.predictions(siam.all.mbx)
-siam.predict <- pred_matrix(siam.all)
+siam.all_nonleancontrol <- make.predictions(siam.all_nonleancontrol)
+siam.all.mbx_nonleancontrol <- make.predictions(siam.all.mbx_nonleancontrol)
+siam.predict_nonleancontrol <- pred_matrix(siam.all_nonleancontrol)
 
-siam.all <-  evaluate.predictions(siam.all)
-siam.all.mbx <-  evaluate.predictions(siam.all.mbx)
+siam.all_nonleancontrol <-  evaluate.predictions(siam.all_nonleancontrol)
+siam.all.mbx_nonleancontrol <-  evaluate.predictions(siam.all.mbx_nonleancontrol)
 
 ### mtx pathway
 mtx.s.siam<-t(nafld_data_mtx_pathway)
 
-siam.all.mtx <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
-siam.all.mtx <- filter.features(siam.all.mtx, filter.method='abundance', cutoff=0.001)
-siam.all.mtx <- normalize.features(siam.all.mtx, norm.method = 'log.std',
+siam.all.mtx_nonleancontrol <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
+siam.all.mtx_nonleancontrol <- filter.features(siam.all.mtx_nonleancontrol, filter.method='abundance', cutoff=0.001)
+siam.all.mtx_nonleancontrol <- normalize.features(siam.all.mtx_nonleancontrol, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 
 set.seed(1123)
-siam.all.mtx <-  create.data.split(
-  siam.all.mtx,
+siam.all.mtx_nonleancontrol <-  create.data.split(
+  siam.all.mtx_nonleancontrol,
   num.folds = 5,
   num.resample = 2
 )
 
 set.seed(1123)
-siam.all.mtx <- train.model(
-  siam.all.mtx,
+siam.all.mtx_nonleancontrol <- train.model(
+  siam.all.mtx_nonleancontrol,
   method = "randomForest"
 )
 
-siam.all.mtx <- make.predictions(siam.all.mtx)
-siam.all.mtx <-  evaluate.predictions(siam.all.mtx)
+siam.all.mtx_nonleancontrol <- make.predictions(siam.all.mtx_nonleancontrol)
+siam.all.mtx_nonleancontrol <-  evaluate.predictions(siam.all.mtx_nonleancontrol)
 
 ### Virome
 vir.s.siam<-t(nafld_data_virome)
 
-siam.all.vir <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
-siam.all.vir <- filter.features(siam.all.vir, filter.method='abundance', cutoff=0.001)
-siam.all.vir <- normalize.features(siam.all.vir, norm.method = 'log.std',
+siam.all.vir_nonleancontrol <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
+siam.all.vir_nonleancontrol <- filter.features(siam.all.vir_nonleancontrol, filter.method='abundance', cutoff=0.001)
+siam.all.vir_nonleancontrol <- normalize.features(siam.all.vir_nonleancontrol, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 set.seed(1123)
-siam.all.vir <-  create.data.split(
-  siam.all.vir,
+siam.all.vir_nonleancontrol <-  create.data.split(
+  siam.all.vir_nonleancontrol,
   num.folds = 5,
   num.resample = 2
 )
 
 set.seed(1123)
-siam.all.vir <- train.model(
-  siam.all.vir,
+siam.all.vir_nonleancontrol <- train.model(
+  siam.all.vir_nonleancontrol,
   method = "randomForest"
 )
 
-siam.all.vir <- make.predictions(siam.all.vir)
-siam.all.vir <-  evaluate.predictions(siam.all.vir)
+siam.all.vir_nonleancontrol <- make.predictions(siam.all.vir_nonleancontrol)
+siam.all.vir_nonleancontrol <-  evaluate.predictions(siam.all.vir_nonleancontrol)
 
 ########################################################
 ######## add metadata #########
@@ -709,19 +709,19 @@ norm.mbx.s.siam_common <- norm.mbx.s.siam[, common_samples]
 vir.s.siam_common <- vir.s.siam[, common_samples]
 all_features <- rbind(bugs.s.siam_common, mtx.s.siam_common, norm.mbx.s.siam_common, vir.s.siam_common)
 
-siam.all.vl <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
-siam.all.vl <- filter.features(siam.all.vl, filter.method='abundance', cutoff=0.001)
-siam.all.vl <- normalize.features(siam.all.vl, norm.method = 'log.std',
+siam.all.vl_nonleancontrol <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
+siam.all.vl_nonleancontrol <- filter.features(siam.all.vl_nonleancontrol, filter.method='abundance', cutoff=0.001)
+siam.all.vl_nonleancontrol <- normalize.features(siam.all.vl_nonleancontrol, norm.method = 'log.std',
                                   norm.param = list(log.n0=1e-06, sd.min.q=0))
 
 set.seed(1123)
-siam.all.vl <-  create.data.split(
-  siam.all.vl,
+siam.all.vl_nonleancontrol <-  create.data.split(
+  siam.all.vl_nonleancontrol,
   num.folds = 5,
   num.resample = 2
 )
 
-siam.all.vl <- add.meta.pred(siam.all.vl,
+siam.all.vl_nonleancontrol <- add.meta.pred(siam.all.vl_nonleancontrol,
                              pred.names=c('age',
                                           'db17',
                                           #'bmi17v',
@@ -729,19 +729,19 @@ siam.all.vl <- add.meta.pred(siam.all.vl,
                                           'aheiv2010_15'))
 
 set.seed(1123)
-siam.all.vl <- train.model(
-  siam.all.vl,
+siam.all.vl_nonleancontrol <- train.model(
+  siam.all.vl_nonleancontrol,
   method = "randomForest"
 )
 
-siam.all.vl <- make.predictions(siam.all.vl)
-siam.all.vl <-  evaluate.predictions(siam.all.vl)
+siam.all.vl_nonleancontrol <- make.predictions(siam.all.vl_nonleancontrol)
+siam.all.vl_nonleancontrol <-  evaluate.predictions(siam.all.vl_nonleancontrol)
 
 # evaluation plot for non-lean case vs. control
-model.evaluation.plot('Taxa' = siam.all,
-                      'MBX' = siam.all.mbx,
-                      'MTX pathways' = siam.all.mtx,
-                      'Virome' = siam.all.vir,
+model.evaluation.plot('Taxa' = siam.all_nonleancontrol,
+                      'MBX' = siam.all.mbx_nonleancontrol,
+                      'MTX pathways' = siam.all.mtx_nonleancontrol,
+                      'Virome' = siam.all.vir_nonleancontrol,
                       fn.plot = './eval_plot.full.nonleancase_control_RF.pdf')
 
 ############################
@@ -755,98 +755,98 @@ new.meta.siam <- nafld_data %>%
   column_to_rownames('alias_id')
 meta.siam_label <- create.label(meta = new.meta.siam, label = 'lean_vs_control', case = '1')
 
-siam.all <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
-siam.all.mbx <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
+siam.all_leancontrol <- siamcat (feat = bugs.s.siam, label=meta.siam_label, meta = new.meta.siam)
+siam.all.mbx_leancontrol <- siamcat (feat = norm.mbx.s.siam, label=meta.siam_label, meta = new.meta.siam)
 
-show(siam.all)
+show(siam.all_leancontrol)
 
-siam.all <- filter.features(siam.all, filter.method='abundance', cutoff=0.001)
-siam.all.mbx <- filter.features(siam.all.mbx, filter.method='abundance', cutoff=0.001)
+siam.all_leancontrol <- filter.features(siam.all_leancontrol, filter.method='abundance', cutoff=0.001)
+siam.all.mbx_leancontrol <- filter.features(siam.all.mbx_leancontrol, filter.method='abundance', cutoff=0.001)
 
-siam.all <- normalize.features(siam.all, norm.method = 'log.std',
+siam.all_leancontrol <- normalize.features(siam.all_leancontrol, norm.method = 'log.std',
                                norm.param = list(log.n0=1e-06, sd.min.q=0))
-siam.all.mbx <- normalize.features(siam.all.mbx, norm.method = 'log.std',
+siam.all.mbx_leancontrol <- normalize.features(siam.all.mbx_leancontrol, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 set.seed(1123)
-siam.all <-  create.data.split(
-  siam.all,
+siam.all_leancontrol <-  create.data.split(
+  siam.all_leancontrol,
   num.folds = 5,
   num.resample = 2
 )
 set.seed(1123)
-siam.all.mbx <-  create.data.split(
-  siam.all.mbx,
+siam.all.mbx_leancontrol <-  create.data.split(
+  siam.all.mbx_leancontrol,
   num.folds = 5,
   num.resample = 2
 )
 set.seed(1123)
-siam.all <- train.model(
-  siam.all,
+siam.all_leancontrol <- train.model(
+  siam.all_leancontrol,
   method = "randomForest"
 )
 set.seed(1123)
-siam.all.mbx <- train.model(
-  siam.all.mbx,
+siam.all.mbx_leancontrol <- train.model(
+  siam.all.mbx_leancontrol,
   method = "randomForest"
 )
 
-model_type(siam.all)
+model_type(siam.all_leancontrol)
 
-models <- models(siam.all)
+models <- models(siam.all_leancontrol)
 models[[1]]
 
-siam.all <- make.predictions(siam.all)
-siam.all.mbx <- make.predictions(siam.all.mbx)
-siam.predict <- pred_matrix(siam.all)
+siam.all_leancontrol <- make.predictions(siam.all_leancontrol)
+siam.all.mbx_leancontrol <- make.predictions(siam.all.mbx_leancontrol)
+siam.predict_leancontrol <- pred_matrix(siam.all_leancontrol)
 
-siam.all <-  evaluate.predictions(siam.all)
-siam.all.mbx <-  evaluate.predictions(siam.all.mbx)
+siam.all_leancontrol <-  evaluate.predictions(siam.all_leancontrol)
+siam.all.mbx_leancontrol <-  evaluate.predictions(siam.all.mbx_leancontrol)
 
 ### mtx pathway
 mtx.s.siam<-t(nafld_data_mtx_pathway)
 
-siam.all.mtx <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
-siam.all.mtx <- filter.features(siam.all.mtx, filter.method='abundance', cutoff=0.001)
-siam.all.mtx <- normalize.features(siam.all.mtx, norm.method = 'log.std',
+siam.all.mtx_leancontrol <- siamcat (feat = mtx.s.siam, label = meta.siam_label, meta = new.meta.siam)
+siam.all.mtx_leancontrol <- filter.features(siam.all.mtx_leancontrol, filter.method='abundance', cutoff=0.001)
+siam.all.mtx_leancontrol <- normalize.features(siam.all.mtx_leancontrol, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 set.seed(1123)
-siam.all.mtx <-  create.data.split(
-  siam.all.mtx,
+siam.all.mtx_leancontrol <-  create.data.split(
+  siam.all.mtx_leancontrol,
   num.folds = 5,
   num.resample = 2
 )
 
 set.seed(1123)
-siam.all.mtx <- train.model(
-  siam.all.mtx,
+siam.all.mtx_leancontrol <- train.model(
+  siam.all.mtx_leancontrol,
   method = "randomForest"
 )
 
-siam.all.mtx <- make.predictions(siam.all.mtx)
-siam.all.mtx <-  evaluate.predictions(siam.all.mtx)
+siam.all.mtx_leancontrol <- make.predictions(siam.all.mtx_leancontrol)
+siam.all.mtx_leancontrol <-  evaluate.predictions(siam.all.mtx_leancontrol)
 
 ### Virome
 vir.s.siam<-t(nafld_data_virome)
 
-siam.all.vir <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
-siam.all.vir <- filter.features(siam.all.vir, filter.method='abundance', cutoff=0.001)
-siam.all.vir <- normalize.features(siam.all.vir, norm.method = 'log.std',
+siam.all.vir_leancontrol <- siamcat (feat = vir.s.siam, label = meta.siam_label, meta = new.meta.siam)
+siam.all.vir_leancontrol <- filter.features(siam.all.vir_leancontrol, filter.method='abundance', cutoff=0.001)
+siam.all.vir_leancontrol <- normalize.features(siam.all.vir_leancontrol, norm.method = 'log.std',
                                    norm.param = list(log.n0=1e-06, sd.min.q=0))
 set.seed(1123)
-siam.all.vir <-  create.data.split(
-  siam.all.vir,
+siam.all.vir_leancontrol <-  create.data.split(
+  siam.all.vir_leancontrol,
   num.folds = 5,
   num.resample = 2
 )
 
 set.seed(1123)
-siam.all.vir <- train.model(
-  siam.all.vir,
+siam.all.vir_leancontrol <- train.model(
+  siam.all.vir_leancontrol,
   method = "randomForest"
 )
 
-siam.all.vir <- make.predictions(siam.all.vir)
-siam.all.vir <-  evaluate.predictions(siam.all.vir)
+siam.all.vir_leancontrol <- make.predictions(siam.all.vir_leancontrol)
+siam.all.vir_leancontrol <-  evaluate.predictions(siam.all.vir_leancontrol)
 
 ########################################################
 ######## add metadata #########
@@ -860,19 +860,19 @@ norm.mbx.s.siam_common <- norm.mbx.s.siam[, common_samples]
 vir.s.siam_common <- vir.s.siam[, common_samples]
 all_features <- rbind(bugs.s.siam_common, mtx.s.siam_common, norm.mbx.s.siam_common, vir.s.siam_common)
 
-siam.all.vl <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
-siam.all.vl <- filter.features(siam.all.vl, filter.method='abundance', cutoff=0.001)
-siam.all.vl <- normalize.features(siam.all.vl, norm.method = 'log.std',
+siam.all.vl_leancontrol <- siamcat (feat = all_features, label = meta.siam_label, meta = new.meta.siam)
+siam.all.vl_leancontrol <- filter.features(siam.all.vl_leancontrol, filter.method='abundance', cutoff=0.001)
+siam.all.vl_leancontrol <- normalize.features(siam.all.vl_leancontrol, norm.method = 'log.std',
                                   norm.param = list(log.n0=1e-06, sd.min.q=0))
 
 set.seed(1123)
-siam.all.vl <-  create.data.split(
-  siam.all.vl,
+siam.all.vl_leancontrol <-  create.data.split(
+  siam.all.vl_leancontrol,
   num.folds = 5,
   num.resample = 2
 )
 
-siam.all.vl <- add.meta.pred(siam.all.vl,
+siam.all.vl_leancontrol <- add.meta.pred(siam.all.vl_leancontrol,
                              pred.names=c('age',
                                           'db17',
                                           #'bmi17v',
@@ -880,17 +880,17 @@ siam.all.vl <- add.meta.pred(siam.all.vl,
                                           'aheiv2010_15'))
 
 set.seed(1123)
-siam.all.vl <- train.model(
-  siam.all.vl,
+siam.all.vl_leancontrol <- train.model(
+  siam.all.vl_leancontrol,
   method = "randomForest"
 )
 
-siam.all.vl <- make.predictions(siam.all.vl)
-siam.all.vl <-  evaluate.predictions(siam.all.vl)
+siam.all.vl_leancontrol <- make.predictions(siam.all.vl_leancontrol)
+siam.all.vl_leancontrol <-  evaluate.predictions(siam.all.vl_leancontrol)
 
 # evaluation plot for lean case vs. control
-model.evaluation.plot('Taxa' = siam.all,
-                      'MBX' = siam.all.mbx,
-                      'MTX pathways' = siam.all.mtx,
-                      'Virome' = siam.all.vir,
+model.evaluation.plot('Taxa' = siam.all_leancontrol,
+                      'MBX' = siam.all.mbx_leancontrol,
+                      'MTX pathways' = siam.all.mtx_leancontrol,
+                      'Virome' = siam.all.vir_leancontrol,
                       fn.plot = './eval_plot.full.leancase_control_RF.pdf')
