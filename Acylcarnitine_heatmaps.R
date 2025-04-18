@@ -299,10 +299,40 @@ carnitine_annotations <- left_join(ahei_results_car, fiber_results_car, by = "Sp
 
 rownames(carnitine_annotations) <- gsub("_", " ", rownames(carnitine_annotations))
 
+ahei_vals <- c(ahei_results$AHEI, ahei_results_car$AHEI)
+fiber_vals <- c(fiber_results$Fiber, fiber_results_car$Fiber)
+
+ahei_limit <- max(abs(ahei_vals), na.rm = TRUE)
+fiber_limit <- max(abs(fiber_vals), na.rm = TRUE)
+
+n_bins <- 6
+ahei_breaks <- seq(-ahei_limit, ahei_limit, length.out = n_bins + 1)
+fiber_breaks <- seq(-fiber_limit, fiber_limit, length.out = n_bins + 1)
+
+#midpoint labels for bins
+new_labels <- function(breaks) {
+  mids <- (head(breaks, -1) + tail(breaks, -1)) / 2
+  format(round(mids, 2), nsmall = 2)
+}
+
+ahei_palette <- setNames(rev(colorRampPalette(c("blue", "white", "red"))(n_bins)), rev(new_labels(ahei_breaks)))
+fiber_palette <- setNames(rev(colorRampPalette(c("blue", "white", "red"))(n_bins)), rev(new_labels(fiber_breaks)))
+
+relabel_bins <- function(vals, breaks) {
+  bins <- cut(vals, breaks = breaks, include.lowest = TRUE, labels = FALSE)
+  mids <- new_labels(breaks)
+  factor(mids[bins], levels = mids)
+}
+
+species_annotations$AHEI <- relabel_bins(ahei_results$AHEI, ahei_breaks)
+species_annotations$Fiber <- relabel_bins(fiber_results$Fiber, fiber_breaks)
+carnitine_annotations$AHEI <- relabel_bins(ahei_results_car$AHEI, ahei_breaks)
+carnitine_annotations$Fiber <- relabel_bins(fiber_results_car$Fiber, fiber_breaks)
+
 annotation_colors <- list(
-  MASLD = c("Enriched" = "#E69F00", "Depleted" = "#999999"), 
-  AHEI = colorRampPalette(c("blue", "white", "red"))(50),
-  Fiber = colorRampPalette(c("blue", "white", "red"))(50)
+  MASLD = c("Enriched" = "#E69F00", "Depleted" = "#999999"),
+  AHEI = ahei_palette,
+  Fiber = fiber_palette
 )
 
 pheatmap(
@@ -406,10 +436,40 @@ carnitine_annotations <- left_join(ahei_results_car, fiber_results_car, by = "Sp
 
 rownames(carnitine_annotations) <- gsub("_", " ", rownames(carnitine_annotations))
 
+ahei_vals <- c(ahei_results$AHEI, ahei_results_car$AHEI)
+fiber_vals <- c(fiber_results$Fiber, fiber_results_car$Fiber)
+
+ahei_limit <- max(abs(ahei_vals), na.rm = TRUE)
+fiber_limit <- max(abs(fiber_vals), na.rm = TRUE)
+
+n_bins <- 6
+ahei_breaks <- seq(-ahei_limit, ahei_limit, length.out = n_bins + 1)
+fiber_breaks <- seq(-fiber_limit, fiber_limit, length.out = n_bins + 1)
+
+#midpoint labels for bins
+new_labels <- function(breaks) {
+  mids <- (head(breaks, -1) + tail(breaks, -1)) / 2
+  format(round(mids, 2), nsmall = 2)
+}
+
+ahei_palette <- setNames(rev(colorRampPalette(c("blue", "white", "red"))(n_bins)), rev(new_labels(ahei_breaks)))
+fiber_palette <- setNames(rev(colorRampPalette(c("blue", "white", "red"))(n_bins)), rev(new_labels(fiber_breaks)))
+
+relabel_bins <- function(vals, breaks) {
+  bins <- cut(vals, breaks = breaks, include.lowest = TRUE, labels = FALSE)
+  mids <- new_labels(breaks)
+  factor(mids[bins], levels = mids)
+}
+
+species_annotations$AHEI <- relabel_bins(ahei_results$AHEI, ahei_breaks)
+species_annotations$Fiber <- relabel_bins(fiber_results$Fiber, fiber_breaks)
+carnitine_annotations$AHEI <- relabel_bins(ahei_results_car$AHEI, ahei_breaks)
+carnitine_annotations$Fiber <- relabel_bins(fiber_results_car$Fiber, fiber_breaks)
+
 annotation_colors <- list(
-  MASLD = c("Enriched" = "#E69F00", "Depleted" = "#999999"), 
-  AHEI = colorRampPalette(c("blue", "white", "red"))(50),
-  Fiber = colorRampPalette(c("blue", "white", "red"))(50)
+  MASLD = c("Enriched" = "#E69F00", "Depleted" = "#999999"),
+  AHEI = ahei_palette,
+  Fiber = fiber_palette
 )
 
 pheatmap(
