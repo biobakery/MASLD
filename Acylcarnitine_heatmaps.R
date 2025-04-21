@@ -472,12 +472,16 @@ annotation_colors <- list(
   Fiber = fiber_palette
 )
 
+#cases approx symmetric. ensure symmetry for correlation among controls
+corr_limit <- max(abs(heatmap_data), na.rm = TRUE)
+
 pheatmap(
   heatmap_data,
   display_numbers = significance_matrix,  #asterisks for significant correlations
   main = "Among controls (N=478)",
   fontsize_number = 15,
   color = colorRampPalette(c("blue", "white", "red"))(100), 
+  breaks = seq(-corr_limit, corr_limit, length.out = 101),
   border_color = "grey",
   cluster_rows = TRUE,
   cluster_cols = FALSE,
